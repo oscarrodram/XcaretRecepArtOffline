@@ -1,0 +1,253 @@
+<mvc:View controllerName="com.xcaret.recepcionarticulosoff.controller.Main"
+    xmlns:mvc="sap.ui.core.mvc"
+	xmlns="sap.m"
+	xmlns:table="sap.ui.table"
+	xmlns:core="sap.ui.core"
+	xmlns:fb="sap.ui.comp.filterbar"
+	xmlns:svm="sap.ui.comp.smartvariants"
+	xmlns:semantic="sap.f.semantic"
+    id="mainView">
+	<semantic:SemanticPage id="mainPage" headerPinnable="false" toggleHeaderOnTitleClick="false" >
+		<semantic:titleHeading>
+			<svm:SmartVariantManagement id="svm" showExecuteOnSelection="true" persistencyKey="PROG_ALMACEN_VARIANT" save="onVariantSave" />
+		</semantic:titleHeading>
+		<!-- BEGIN FILTER BAR -->
+		<semantic:headerContent>
+		<fb:FilterBar id="filterbar" persistencyKey="myPersKey" useToolbar="false" search="onInitialMainPage">
+					<fb:filterGroupItems>
+						<fb:FilterGroupItem name="IdEBELNG" label="{i18n>EBELN}" groupName="Group1" visibleInFilterBar="true">
+							<fb:control>
+								<MultiInput width="40%" id="IdEBELN" tokenUpdate="updateTokenIdClear" valueHelpRequest="valueHelpFilter" showSuggestion="true"
+                                            suggestionItems="{ path: 'serviceModel>/generalData', sorter: { path: 'EBELN' } }">
+											<customData>
+												<core:CustomData key="fragmentPath" value="ValueHelp_IdLIFNR" />
+											</customData>
+											<core:Item key="{serviceModel>EBELN}" text="{serviceModel>EBELN}" />
+								</MultiInput>
+							</fb:control>
+						</fb:FilterGroupItem>
+						<fb:FilterGroupItem name="IdPSPNRG" label="{i18n>PSPNR}" groupName="Group1" visibleInFilterBar="true">
+							<fb:control>
+								<MultiInput width="40%" id="IdPSPNR" tokenUpdate="updateTokenIdClear" valueHelpRequest="valueHelpFilter"
+												suggestionItems="{ path: 'serviceModel>/generalProjects', sorter: { path: 'NAME1' } }">
+												<customData>
+													<core:CustomData key="fragmentPath" value="ValueHelp_idPSPNR" />
+												</customData>
+												<core:Item key="{serviceModel>ID_PEP}" text="{serviceModel>NAME1}" />
+								</MultiInput>
+							</fb:control>
+						</fb:FilterGroupItem>
+						<fb:FilterGroupItem name="IdIDCONT_GI" label="{i18n>ID_CON}" groupName="Group1" visibleInFilterBar="true">
+								<fb:control>
+									<MultiInput width="40%" id="ID_CON" tokenUpdate="updateTokenIdClear" valueHelpRequest="valueHelpFilter"
+										suggestionItems="{ path: 'serviceModel>/generalContract', sorter: { path: 'ID_CON' } }">
+										<customData>
+											<core:CustomData key="fragmentPath" value="ValueHelp_idREQ" />
+										</customData>
+										<core:Item key="{serviceModel>ID_CON}" text="{serviceModel>CONAM}" />
+									</MultiInput>
+								</fb:control>
+						</fb:FilterGroupItem>
+						<fb:FilterGroupItem name="IdUSERG" label="{i18n>RESPONSABLE}" groupName="Group1" visibleInFilterBar="true">
+							<fb:control>
+								<MultiInput width="40%" id="IdUSER" enabled="false" tokenUpdate="updateTokenIdClear" valueHelpRequest="valueHelpFilter"
+									suggestionItems="{ path: 'serviceModel>/generalUser', sorter: { path: 'ERNAM' } }">
+									<customData>
+										<core:CustomData key="fragmentPath" value="ValueHelp_idUSER" />
+									</customData>
+									<core:Item key="{serviceModel>ERNAM}" text="{serviceModel>UserText}" />
+								</MultiInput>
+							</fb:control>
+						</fb:FilterGroupItem>
+						<fb:FilterGroupItem name="IdERDATG" label="{i18n>REC_AT}" groupName="Group1" visibleInFilterBar="true">
+							<fb:control>
+								<DateRangeSelection
+									id="idCreationDateRange"
+									displayFormat="yyyy-MM-dd"
+									change="onDateRangeChange"
+								/>
+							</fb:control>
+						</fb:FilterGroupItem>
+					</fb:filterGroupItems>
+				</fb:FilterBar>
+			<!-- END FILTER BAR -->	
+		
+		<IconTabBar id="iconTabBar" expandable="true" class="sapUiMediumMarginTop" select=".onIconTabFilterSelect">
+			<!-- General Data Tab -->
+            <items>
+                <IconTabFilter
+                        count="{serviceModel>/titleCount}"
+                        text="{i18n>title}"
+                        key="All" 
+						showAll="true"/>
+				<IconTabSeparator />
+				<IconTabFilter
+					icon="sap-icon://sys-enter-2"
+					iconColor="Positive"
+					count=""
+					text="{i18n>STATUS_ACTIVE}"
+					key="Active" />
+				<IconTabFilter
+					icon="sap-icon://error"
+					iconColor="Negative"
+					count=""
+					text="{i18n>STATUS_DELETED}"
+					key="Deleted" />
+				<IconTabFilter
+					icon="sap-icon://alert"
+					iconColor="Critical"
+					count=""
+					text="{i18n>STATUS_PARTIAL_TAB}"
+					key="Partial" />
+				<IconTabFilter
+					icon="sap-icon://information"
+					iconColor="Default"
+					count=""
+					text="{i18n>STATUS_TOTAL_TAB}"
+					key="Total" />
+            </items>
+				
+			<content>
+
+			<ScrollContainer
+                    id="ProgAlmacenItemsScrollContainer"
+                    horizontal="true"
+                    width="100%">
+
+				<Table
+					id="progrAlmacenTable"
+					width="auto"
+					items="{serviceModel>/generalData}"
+					noDataText="{i18n>tableNoDataText}"
+					busyIndicatorDelay="{serviceModel>/tableBusyDelay}"
+					growing="true"
+					growingScrollToLoad="false" sticky="HeaderToolbar"
+					mode="MultiSelect" growingThreshold="5" updateStarted="onUpdateStarted">
+					<headerToolbar>
+						<OverflowToolbar width="100%">
+							
+							<ToolbarSpacer />
+					<!--
+							<Button
+								id="idbtnFilter"
+								icon="sap-icon://add-filter"
+								text="{i18n>filterAdd}"
+								tooltip="{i18n>filterAddTooltip}"
+								type="Emphasized"
+								press="findHandleFragment">
+							<customData>
+								<core:CustomData key="fragmentPath" value="filterDialog" />
+							</customData>
+							</Button>
+					-->
+							<Button
+								id="idBtnCreate" visible="false"
+								icon="sap-icon://add"
+								text="{i18n>create}"
+								tooltip="{i18n>create}"
+								type="Emphasized"
+								press="navigateToCreate"/>
+							<Button
+								icon="sap-icon://excel-attachment"
+								tooltip="{i18n>ExcelTool}"
+								press="exportToExcel" visible="false"/>
+							
+							<Button
+								icon="sap-icon://settings"
+								tooltip="{i18n>setColumns}"
+								press="onOpenColumnSettings"/>
+						</OverflowToolbar>
+					</headerToolbar>
+					<columns>
+						<Column id="EBELNColumn" visible="{settingsModel>/EBELN}" width="8rem" hAlign="Left">
+							<Text text="{i18n>EBELN}"/>
+						</Column>
+						<Column id="PSPNRColumn" visible="{settingsModel>/PSPNR}" width="8rem" hAlign="Left">
+							<Text text="{i18n>PSPNR}"/>
+						</Column>
+						<Column id="GENERAL_STATUSColumn" visible="{settingsModel>/GENERAL_STATUS}" width="8rem" hAlign="Left">
+							<Text text="{i18n>GENERAL_STATUS}"/>
+						</Column>
+						<Column id="LIFNRColumn" visible="{settingsModel>/LIFNR}" width="8rem" hAlign="Left">
+							<Text text="{i18n>LIFNR}"/>
+						</Column>
+						<Column id="ESTATColumn" visible="{settingsModel>/ESTAT}" width="8rem" hAlign="Left">
+							<Text text="{i18n>ESTAT}"/>
+						</Column>
+						<Column id="CREATED_ATColumn" visible="{settingsModel>/CREATED_AT}" width="8rem" hAlign="Left">
+							<Text text="{i18n>REC_AT}"/>
+						</Column>
+						<Column id="CREATION_NAMEColumn" visible="{settingsModel>/CREATION_NAME}" width="8rem" hAlign="Left">
+							<Text text="{i18n>CREATION_NAME}"/>
+						</Column>
+						<Column id="CREATION_LNAMEColumn" visible="{settingsModel>/CREATION_LNAME}" width="8rem" hAlign="Left">
+							<Text text="{i18n>CREATION_LNAME}"/>
+						</Column>
+						<Column id="CREATION_EMAILColumn" visible="{settingsModel>/CREATION_EMAIL}" width="8rem" hAlign="Left">
+							<Text text="{i18n>CREATION_EMAIL}"/>
+						</Column>
+						<Column id="MODIFY_NAMEColumn" visible="{settingsModel>/MODIFY_NAME}" width="8rem" hAlign="Left">
+							<Text text="{i18n>MODIFY_NAME}"/>
+						</Column>
+						<Column id="MODIFY_LNAMEColumn" visible="{settingsModel>/MODIFY_LNAME}" width="8rem" hAlign="Left">
+							<Text text="{i18n>MODIFY_LNAME}"/>
+						</Column>
+						<Column id="MODIFY_EMAILColumn" visible="{settingsModel>/MODIFY_EMAIL}" width="8rem" hAlign="Left">
+							<Text text="{i18n>MODIFY_EMAIL}"/>
+						</Column>
+					</columns>
+
+					<items>
+						<ColumnListItem vAlign="Middle" type="Navigation" press=".getDetailReadSpecificPos">
+							<cells>
+								<ObjectIdentifier title="{serviceModel>EBELN}"/>
+								<ObjectIdentifier title="{serviceModel>PROJ_NAME}"/>
+								<ObjectStatus text="{serviceModel>STATUS_TEXT}" icon="{serviceModel>STATUS_ICON}" state="{serviceModel>STATUS_STATE}" />
+								<ObjectIdentifier title="{serviceModel>SUP_NAME}"/>
+								<ObjectIdentifier title="{serviceModel>ESTAT}"/>
+								<ObjectIdentifier title="{serviceModel>CREATED_AT_DATE}"/>
+								<ObjectIdentifier title="{serviceModel>CREATION_NAME}"/>
+								<ObjectIdentifier title="{serviceModel>CREATION_LNAME}"/>
+								<ObjectIdentifier title="{serviceModel>CREATION_EMAIL}"/>
+								<ObjectIdentifier title="{serviceModel>MODIFY_NAME}"/>
+								<ObjectIdentifier title="{serviceModel>MODIFY_LNAME}"/>
+								<ObjectIdentifier title="{serviceModel>MODIFY_EMAIL}"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+			</ScrollContainer>
+			
+				<Dialog id="columnSettingsDialog" title="{i18n>setColumns}">
+					<content>
+						<List id="columnList" mode="MultiSelect">
+							<StandardListItem title="{i18n>EBELN}" selected="{settingsModel>/EBELN}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>PSPNR}" selected="{settingsModel>/PSPNR}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>GENERAL_STATUS}" selected="{settingsModel>/GENERAL_STATUS}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>LIFNR}" selected="{settingsModel>/LIFNR}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>ESTAT}" selected="{settingsModel>/ESTAT}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>REC_AT}" selected="{settingsModel>/CREATED_AT}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>CREATION_NAME}" selected="{settingsModel>/CREATION_NAME}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>CREATION_LNAME}" selected="{settingsModel>/CREATION_LNAME}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>CREATION_EMAIL}" selected="{settingsModel>/CREATION_EMAIL}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>MODIFY_NAME}" selected="{settingsModel>/MODIFY_NAME}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>MODIFY_LNAME}" selected="{settingsModel>/MODIFY_LNAME}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>MODIFY_EMAIL}" selected="{settingsModel>/MODIFY_EMAIL}" press="onToggleColumnVisibility"/>
+						</List>
+					</content>
+					<beginButton>
+						<Button text="OK" press="onCloseColumnSettings"/>
+					</beginButton>
+				</Dialog>
+
+			</content>
+		</IconTabBar>
+
+		</semantic:headerContent>
+
+		<semantic:titleCustomTextActions>
+			<Button icon="sap-icon://customer" text="{i18n>ChangeUser}" type="Attention" press="showUserDialog"/>
+		</semantic:titleCustomTextActions>
+
+	</semantic:SemanticPage>
+</mvc:View>

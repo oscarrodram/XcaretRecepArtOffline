@@ -1,0 +1,12 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+	<Popover
+		title=""
+		class="sapUiResponsivePadding--header sapUiResponsivePadding--footer"
+		placement="Right"
+		resizable="false"
+		initialFocus="close">
+		<Image src="" width="30em" densityAware="false" />
+	</Popover>
+</core:FragmentDefinition>

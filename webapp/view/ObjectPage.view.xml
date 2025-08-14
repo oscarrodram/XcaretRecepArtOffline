@@ -1,0 +1,452 @@
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:ux="sap.uxap"
+    xmlns="sap.m"
+    xmlns:layout="sap.uxap"
+    xmlns:core="sap.ui.core"
+    xmlns:f="sap.ui.layout.form"
+    xmlns:l="sap.ui.layout"
+    controllerName="com.xcaret.recepcionarticulosoff.controller.ObjectPage">
+    
+  <layout:ObjectPageLayout id="ObjectPageLayout" upperCaseAnchorBar="false" showFooter="true" >
+            <!-- Header Section -->
+            <layout:headerTitle>
+            <layout:ObjectPageDynamicHeaderTitle>
+				<layout:navigationActions>
+					<OverflowToolbarButton id="idBackButton"
+						type="Transparent"
+						icon="sap-icon://decline"
+						press="onCancelEdit"
+						tooltip="{i18n>back}"
+						visible="true"/>
+				</layout:navigationActions>
+				<layout:actions>
+					<Button
+						id="idBtnEdit"
+						visible="false"
+						icon="sap-icon://edit"
+						text="{i18n>editBtn}"
+						type="Emphasized"
+						press="onEditFieldsBtn"/>
+                    <Button
+						id="idBtnShowSign"
+						visible="false"
+						icon="sap-icon://show"
+						text="{i18n>ShowSing}"
+						type="Emphasized"
+						press="onShowSignBtn"/>
+                    <Button
+                        id="idBtnSign"
+                        text="{i18n>Sign}"
+                        press="onSign"
+                        icon="sap-icon://signature"
+                        type="Emphasized"
+                        visible="false"/>
+				</layout:actions>
+			</layout:ObjectPageDynamicHeaderTitle>
+    </layout:headerTitle>
+
+    <layout:headerContent>
+
+        <FlexBox wrap="Wrap">
+
+			<Avatar
+				displaySize="L"
+				displayShape="Square"
+				class="sapUiTinyMarginEnd" >
+			</Avatar>
+
+			<l:VerticalLayout class="sapUiSmallMarginBeginEnd">
+				<Label id="labRecept" text="{i18n>RecepMat}" />
+				<ObjectIdentifier id="objIdenRecept"/>
+				<Label id="idLabelStatusHeader" text="{i18n>GENERAL_STATUS}" class="sapUiTinyMarginTop" />
+				<ObjectStatus id="idStatusHeader" text="{globalModel>/STATUS_TEXT}" icon="{globalModel>/STATUS_ICON}" state="{globalModel>/STATUS_STATE}"/>
+			</l:VerticalLayout>
+
+			<l:VerticalLayout class="sapUiSmallMarginBeginEnd">
+				<Label id="idNameHeader" text="{i18n>NAME}" />
+				<Title id="titleName" text="" level="H3" />
+				<Label id="idTotalHeader" text="{i18n>TOTAL}" class="sapUiTinyMarginTop"/>
+				<Title id="titleTotal" text="" level="H3" />
+			</l:VerticalLayout>
+
+			<l:VerticalLayout class="sapUiSmallMarginBeginEnd">
+                <Label text="{i18n>EBELN_TITLE}" />
+                <ObjectStatus
+                    icon="sap-icon://favorite"
+                    class="sapMObjectStatusMedium"
+                    text="{globalModel>/EBELN}"
+                    active="false"
+                    inverted="true"
+                    state="Indication14" />
+			</l:VerticalLayout>           
+		</FlexBox>
+        
+    </layout:headerContent>
+
+    <!-- Main Fields Section -->
+    <layout:sections>
+      <layout:ObjectPageSection titleUppercase="false" id="MainDetailsSection" title="{i18n>generalInformation}" >
+        <layout:subSections>
+          <layout:ObjectPageSubSection title="{i18n>generalInformation}" showTitle="false">
+            <layout:blocks>
+            <f:SimpleForm id="SimpleFormDisplay480" class="sapUxAPObjectPageSubSectionAlignContent"
+              editable="false"
+              layout="ResponsiveGridLayout"
+              title="{i18n>basicData}"
+              labelSpanL="4"
+              labelSpanM="4"
+              emptySpanL="0"
+              emptySpanM="0"
+              columnsL="2"
+              columnsM="2">
+                <f:content>
+                  <core:Title text="{i18n>programmingData}" />
+
+					<Label text="{i18n>PSPNR}" id="IdNAMEPLabel" required="true" />
+					<MultiInput id="IdPSPNR" enabled="false" placeholder="{i18n>placeProject}" tokenUpdate="updateTokenIdClear" valueHelpRequest="valueHelpFilter" maxTokens="1"
+									suggestionItems="{ path: 'serviceModel>/generalProjects', sorter: { path: 'NAME1' } }">
+							<tokens>
+                                <Token key="{serviceModel>ID_PEP}" text="{serviceModel>NAME1}" />
+                            </tokens>
+						<core:Item key="{serviceModel>ID_PEP}" text="{serviceModel>NAME1}" />
+					</MultiInput>
+
+                    <Label text="{i18n>ID_CON}" id="IdID_CONLabel" />
+					<MultiInput id="ID_CON" enabled="false" placeholder="{i18n>placeContract}" tokenUpdate="updateTokenIdClear" valueHelpRequest="valueHelpFilter" maxTokens="1"
+									suggestionItems="{ path: 'serviceModel>/generalContract', sorter: { path: 'ID_CON' } }">
+							<tokens>
+                                <Token key="{serviceModel>ID_CON}" text="{serviceModel>CONAM}" />
+                            </tokens>
+						<core:Item key="{serviceModel>ID_CON}" text="{serviceModel>CONAM}" />
+					</MultiInput>
+
+					<Label text="{i18n>LIFNR}" id="IdLIFNRLabel" />
+					<Text id="IdLIFNRInput" text="{globalModel>/lifnr_des}" />      
+
+                 <core:Title text="{i18n>administrativeData}" />
+
+                   <Label text="{i18n>REC_AT}" id="IdAEDATLabel" />
+                    <DatePicker
+                        width="60%"
+                        id="IdEINDTDatePicker"
+                        displayFormat="yyyy-MM-dd"
+                        valueFormat="yyyy-MM-dd"
+                        placeholder="Select a date"
+                        change="onDateChange"
+                        enabled="false"
+                         />
+
+                    <Label text="{i18n>RESPONSABLE}" id="IdAEDATRespon" required="true" />
+                    <MultiInput id="IdRESP" enabled="false" placeholder="{i18n>placeResp}" tokenUpdate="updateTokenIdClear" valueHelpRequest="valueHelpFilter" maxTokens="1"
+									suggestionItems="{ path: 'serviceModel>/generalUser', sorter: { path: 'UserId' } }">
+							<tokens>
+                                <Token key="{serviceModel>UserId}" text="{serviceModel>UserText}" />
+                            </tokens>
+						<core:Item key="{serviceModel>UserId}" text="{serviceModel>UserText}" />
+					</MultiInput>
+                    
+                    <Label text="{i18n>REC_AT_2}" id="IdAEDATLabel2" />
+                    <DatePicker
+                        width="60%"
+                        id="IdEINDTDatePicker2"
+                        displayFormat="yyyy-MM-dd"
+                        valueFormat="yyyy-MM-dd"
+                        placeholder="Select a date"
+                        change="onDateChange"
+                        enabled="{globalModel>/enabled}"
+                    />
+
+                    <!--
+                    <Label text="{i18n>XDIFICAALL}" id="IdAllXdifica" required="false" />
+                    <Switch
+                            id="switchXdifica"
+                            state="false"
+                            customTextOn=" "
+                            customTextOff=" "
+                            change="onChangeXdificaAll"
+                            enabled="false" visible="true"/>
+                    -->
+                     
+<!--					 
+                    <Label text="{i18n>LOEKZ}" id="IdLOEKZLabel" visible="false" />
+                    <VBox>
+						<Switch
+							id="switchLOEKZ"
+							state="{= ${serviceModel>/generalDataDetail/LOEKZ} === null ? false : true }"
+							change="onSwitchChange" enabled="false" visible="false"/>
+					</VBox>
+                    -->
+
+                </f:content>
+              <f:layoutData>
+              <FlexItemData shrinkFactor="0" backgroundDesign="Solid" styleClass="sapContrastPlus"/>
+              </f:layoutData>
+            </f:SimpleForm>
+              
+            </layout:blocks>
+          </layout:ObjectPageSubSection>
+        </layout:subSections>
+      </layout:ObjectPageSection>
+
+      <!-- Table Section -->
+      <layout:ObjectPageSection id="ItemsSection" title="{i18n>programmingItems}"
+        showTitle="false" titleUppercase="false" > <!--importance="High"-->
+        <layout:subSections>
+            <layout:ObjectPageSubSection id="ItemsSubSection" showTitle="false">
+              <VBox>
+                <!-- Add Button for Adding New Entries -->
+                <HBox justifyContent="End" width="100%" >
+                    
+                    <ToolbarSpacer width="10px" />
+                    <Button id="idBttonDelete" 
+                                    icon="sap-icon://delete"
+                                    type="Reject"
+                                    enabled="{globalModel>/enabled}"
+                                    tooltip="Delete"
+                                    press=".onDelete"
+                                    visible="false" />
+                    <ToolbarSpacer width="10px" />
+                    <Button id="idBttonReference"
+                        enabled="false"
+                        text="{i18n>referenceTo}"
+                        type="Emphasized" visible="false"
+                        press=".createDialog">
+                        <customData>
+						    <core:CustomData key="fragmentPath" value="idReferenceTo" />
+					    </customData>
+                    </Button>
+                    <ToolbarSpacer width="10px" />
+                    <Button
+								icon="sap-icon://settings"
+								tooltip="{i18n>setColumns}"
+								press="onOpenColumnSettings"/>
+                </HBox>
+                <ScrollContainer
+                    id="ItemsScrollContainer"
+                    horizontal="true"
+                    vertical="true"
+                    width="100%"
+                    height="400px">
+                <Table
+					id="ItemsTable"
+                    width="auto"
+					updateFinished="onUpdateFinished"
+                    items="{
+                            path: 'serviceModel>/ScheduleLine/Items',
+                            sorter: {
+                                path: 'EBELN',
+                                descending: false
+                            }
+                        }"
+                    noDataText="{i18n>tableNoDataText}"
+                    busyIndicatorDelay="{serviceModel>/tableBusyDelay}"
+                    growing="true"
+					growingScrollToLoad="true" growingThreshold="5" mode="MultiSelect" selectionChange="onSelectionChange"
+                    >
+					<headerToolbar>
+                        <OverflowToolbar>
+                            <Title id="tableHeader" text="{globalModel>/titleProj}" />
+                            <ToolbarSpacer />
+                            <!-- Optional: Add other controls like search or buttons here -->
+                        </OverflowToolbar>
+                    </headerToolbar>
+					<columns>
+                        <Column id="IMAGColumn" visible="{createSettingsModelItem>/IMAG}" width="8rem" hAlign="Center">
+                            <Text text="{i18n>IMAG}"/>
+                        </Column>
+						<Column id="EBELPColumn" visible="{createSettingsModelItem>/EBELP}" width="8rem" hAlign="Left">
+							<Text text="{i18n>EBELP}"/>
+						</Column>
+                        <Column id="GENERAL_STATUSColumn" visible="{createSettingsModelItem>/GENERAL_STATUS}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>GENERAL_STATUS}"/>
+                        </Column>
+						<Column id="LINENAMEColumn" visible="{createSettingsModelItem>/LINENAME}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>LINENAME}"/>
+                        </Column>
+						<Column id="MENGEColumn" visible="{createSettingsModelItem>/MENGE}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>MENGE}"/>
+                        </Column>
+                        <Column id="QTY_AVAColumn" visible="{createSettingsModelItem>/QTY_AVA}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>QTY_AVA}"/>
+                        </Column>
+						<Column id="QTY_DELIVColumn" visible="{createSettingsModelItem>/QTY_DELIV}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>TO_RECEIVE}"/>
+                        </Column>
+                        <Column id="QTY_DELIV_COPYColumn" visible="{createSettingsModelItem>/QTY_DELIV_COPY}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>RECEIVE}"/>
+                        </Column>
+						<Column id="RECEP_XDIFICAColumn" visible="{createSettingsModelItem>/RECEP_XDIFICA}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>RECEP_XDIFICA}"/>
+                        </Column>
+						<Column id="CATEGORYColumn" visible="{createSettingsModelItem>/CATEGORY}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>CATEGORY}"/>
+                        </Column>
+						<Column id="FAMILYColumn" visible="{createSettingsModelItem>/FAMILY}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>FAMILY}"/>
+                        </Column>
+						<Column id="BRANDColumn" visible="{createSettingsModelItem>/BRAND}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>BRAND}"/>
+                        </Column>
+						<Column id="MODELColumn" visible="{createSettingsModelItem>/MODEL}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>MODEL}"/>
+                        </Column>
+						<Column id="DIMENSIONSColumn" visible="{createSettingsModelItem>/DIMENSIONS}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>DIMENSIONS}"/>
+                        </Column>
+						<Column id="STANDARD_INDColumn" visible="{createSettingsModelItem>/STANDARD_IND}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>STANDARD_IND}"/>
+                        </Column>
+						<Column id="IND_ACT_FIJOColumn" visible="{createSettingsModelItem>/IND_ACT_FIJO}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>IND_ACT_FIJO}"/>
+                        </Column>
+						<Column id="HERITAGEColumn" visible="{createSettingsModelItem>/HERITAGE}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>HERITAGE}"/>
+                        </Column>
+						<Column id="SPECIALSColumn" visible="{createSettingsModelItem>/SPECIALS}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>SPECIALS}"/>
+                        </Column>
+						<Column id="FFEColumn" visible="{createSettingsModelItem>/FFE}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>FFE}"/>
+                        </Column>
+						<Column id="DIVISIONColumn" visible="{createSettingsModelItem>/DIVISION}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>DIVISION}"/>
+                        </Column>
+						<Column id="AREAColumn" visible="{createSettingsModelItem>/AREA}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>AREA}"/>
+                        </Column>
+						<Column id="LOCATIONColumn" visible="{createSettingsModelItem>/LOCATION}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>LOCATION}"/>
+                        </Column>
+						<Column id="SUBLOCATIONColumn" visible="{createSettingsModelItem>/SUBLOCATION}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>SUBLOCATION}"/>
+                        </Column>
+						<Column id="SUPPLIEDColumn" visible="{createSettingsModelItem>/SUPPLIED}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>SUPPLIED}"/>
+                        </Column>
+						<Column id="VIEWColumn" visible="{createSettingsModelItem>/VIEW}" width="8rem" hAlign="Left">
+                            <Text text="{i18n>VIEW}"/>
+                        </Column>
+						<Column id="CREATION_NAMEColumn" visible="{createSettingsModelItem>/CREATION_NAME}" width="8rem" hAlign="Left">
+							<Text text="{i18n>CREATION_NAME}"/>
+						</Column>
+						<Column id="CREATION_LNAMEColumn" visible="{createSettingsModelItem>/CREATION_LNAME}" width="8rem" hAlign="Left">
+							<Text text="{i18n>CREATION_LNAME}"/>
+						</Column>
+						<Column id="CREATION_EMAILColumn" visible="{createSettingsModelItem>/CREATION_EMAIL}" width="8rem" hAlign="Left">
+							<Text text="{i18n>CREATION_EMAIL}"/>
+						</Column>
+						<Column id="MODIFY_NAMEColumn" visible="{createSettingsModelItem>/MODIFY_NAME}" width="8rem" hAlign="Left">
+							<Text text="{i18n>MODIFY_NAME}"/>
+						</Column>
+						<Column id="MODIFY_LNAMEColumn" visible="{createSettingsModelItem>/MODIFY_LNAME}" width="8rem" hAlign="Left">
+							<Text text="{i18n>MODIFY_LNAME}"/>
+						</Column>
+						<Column id="MODIFY_EMAILColumn" visible="{createSettingsModelItem>/MODIFY_EMAIL}" width="8rem" hAlign="Left">
+							<Text text="{i18n>MODIFY_EMAIL}"/>
+						</Column>
+					</columns>
+					<items>
+						<ColumnListItem vAlign="Middle" type="Navigation" press=".onPressDetail" selected="{serviceModel>LINE_SELECTED}" >
+							<cells>
+                                <Avatar src="{serviceModel>IMAGE_SRC}" displaySize="L" showBorder="true" press="onPress" displayShape="Square"/>
+								<ObjectIdentifier title="{serviceModel>EBELP}"/>
+                                <ObjectStatus text="{serviceModel>STATUS_TEXT}" icon="{serviceModel>STATUS_ICON}" state="{serviceModel>STATUS_STATE}"/>
+								<ObjectIdentifier title="{serviceModel>LINENAME}"/>
+                                <ObjectIdentifier title="{serviceModel>MENGE}" text="{serviceModel>MEINS}"/>
+                                <ObjectIdentifier title="{serviceModel>QTY_AVA}" text="{serviceModel>MEINS}"/>
+                                <ObjectIdentifier title="{serviceModel>QTY_DELIV}" text="{serviceModel>MEINS}"/>
+                                <ObjectIdentifier title="{serviceModel>QTY_DELIV_COPY}" text="{serviceModel>MEINS}"/>
+                                <Switch state="{serviceModel>RECEP_XDIFICA}" enabled="false" />
+                                <ObjectIdentifier title="{serviceModel>CATEGORY}"/>
+                                <ObjectIdentifier title="{serviceModel>FAMILY}"/>
+                                <ObjectIdentifier title="{serviceModel>BRAND}" />
+                                <ObjectIdentifier title="{serviceModel>MODEL}" />
+                                <ObjectIdentifier title="{serviceModel>DIMENSIONS}"/>
+                                <Switch state="{serviceModel>STANDARD_IND}" enabled="false" />
+                                <Switch state="{serviceModel>IND_ACT_FIJO}" enabled="false" />
+                                <Switch state="{serviceModel>HERITAGE}" enabled="false" />
+                                <Switch state="{serviceModel>SPECIALS}" enabled="false" />
+                                <Switch state="{serviceModel>FFE}" enabled="false" />
+                                <ObjectIdentifier title="{serviceModel>DIVISION}" />
+                                <ObjectIdentifier title="{serviceModel>AREA}"/>
+                                <ObjectIdentifier title="{serviceModel>LOCATION}"/>
+                                <ObjectIdentifier title="{serviceModel>SUBLOCATION}"/>
+                                <ObjectIdentifier title="{serviceModel>SUPPLIED}" />
+                                <ObjectIdentifier title="{serviceModel>VIEW}" />
+								<ObjectIdentifier title="{serviceModel>CREATION_NAME}"/>
+								<ObjectIdentifier title="{serviceModel>CREATION_LNAME}"/>
+								<ObjectIdentifier title="{serviceModel>CREATION_EMAIL}"/>
+								<ObjectIdentifier title="{serviceModel>MODIFY_NAME}"/>
+								<ObjectIdentifier title="{serviceModel>MODIFY_LNAME}"/>
+								<ObjectIdentifier title="{serviceModel>MODIFY_EMAIL}"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+			</ScrollContainer>
+
+				<Dialog id="columnSettingsDialog" title="{i18n>setColumns}">
+					<content>
+						<List id="columnList" mode="MultiSelect">
+							<StandardListItem title="{i18n>EBELP}" selected="{createSettingsModelItem>/EBELP}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>IMAG}" selected="{createSettingsModelItem>/IMAG}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>GENERAL_STATUS}" selected="{createSettingsModelItem>/GENERAL_STATUS}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>LINENAME}" selected="{createSettingsModelItem>/LINENAME}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>MENGE}" selected="{createSettingsModelItem>/MENGE}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>QTY_AVA}" selected="{createSettingsModelItem>/QTY_AVA}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>TO_RECEIVE}" selected="{createSettingsModelItem>/QTY_DELIV}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>RECEIVE}" selected="{createSettingsModelItem>/QTY_DELIV_COPY}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>RECEP_XDIFICA}" selected="{createSettingsModelItem>/RECEP_XDIFICA}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>CATEGORY}" selected="{createSettingsModelItem>/CATEGORY}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>FAMILY}" selected="{createSettingsModelItem>/FAMILY}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>BRAND}" selected="{createSettingsModelItem>/BRAND}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>MODEL}" selected="{createSettingsModelItem>/MODEL}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>DIMENSIONS}" selected="{createSettingsModelItem>/DIMENSIONS}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>STANDARD_IND}" selected="{createSettingsModelItem>/STANDARD_IND}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>IND_ACT_FIJO}" selected="{createSettingsModelItem>/IND_ACT_FIJO}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>HERITAGE}" selected="{createSettingsModelItem>/HERITAGE}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>SPECIALS}" selected="{createSettingsModelItem>/SPECIALS}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>FFE}" selected="{createSettingsModelItem>/FFE}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>DIVISION}" selected="{createSettingsModelItem>/DIVISION}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>AREA}" selected="{createSettingsModelItem>/AREA}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>LOCATION}" selected="{createSettingsModelItem>/LOCATION}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>SUBLOCATION}" selected="{createSettingsModelItem>/SUBLOCATION}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>SUPPLIED}" selected="{createSettingsModelItem>/SUPPLIED}" press="onToggleColumnVisibility"/>
+                            <StandardListItem title="{i18n>VIEW}" selected="{createSettingsModelItem>/VIEW}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>CREATION_NAME}" selected="{createSettingsModelItem>/CREATION_NAME}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>CREATION_LNAME}" selected="{createSettingsModelItem>/CREATION_LNAME}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>CREATION_EMAIL}" selected="{createSettingsModelItem>/CREATION_EMAIL}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>MODIFY_NAME}" selected="{createSettingsModelItem>/MODIFY_NAME}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>MODIFY_LNAME}" selected="{createSettingsModelItem>/MODIFY_LNAME}" press="onToggleColumnVisibility"/>
+							<StandardListItem title="{i18n>MODIFY_EMAIL}" selected="{createSettingsModelItem>/MODIFY_EMAIL}" press="onToggleColumnVisibility"/>
+						</List>
+					</content>
+					<beginButton>
+						<Button text="OK" press="onCloseColumnSettings"/>
+					</beginButton>
+				</Dialog>
+              </VBox>
+            </layout:ObjectPageSubSection>
+        </layout:subSections>
+      </layout:ObjectPageSection>
+    
+    </layout:sections>
+    <ux:footer>
+			<OverflowToolbar id="editOverFlowToolbar" visible="true">
+			    <Button id="messagePopoverBtn"
+				    visible="false"
+					icon= "sap-icon://error"
+					type= "Negative"
+					text= "{i18n>errLog}"
+					press=".handleMessagePopoverPress"
+					ariaHasPopup="Dialog"/>
+				<ToolbarSpacer/>
+				
+                <Button id="idBtnSave" text="{i18n>save}" press="_create" icon="sap-icon://save" type="Accept" visible="false" enabled="{globalModel>/enabled}" />
+                <Button id="idBtnCancel" text="{i18n>cancel}" press="onCancelEdit" icon="sap-icon://cancel" type="Reject" visible="false" enabled="{globalModel>/enabled}" />
+			</OverflowToolbar>
+	</ux:footer>
+    
+  </layout:ObjectPageLayout>
+</mvc:View>

@@ -1,0 +1,157 @@
+<core:FragmentDefinition xmlns="sap.m"
+    xmlns:f="sap.ui.layout.form"
+    xmlns:core="sap.ui.core"
+    xmlns:unified="sap.ui.unified">
+    <Dialog title="{i18n>titlePos} {serviceModel>/0/EBEL}" class="sapUiContentPadding" id="myDialog" contentWidth="60rem" contentHeight="30rem">
+        <content>
+            <HBox justifyContent="Start">
+                <VBox class="sapUiSmallMarginBegin">
+                    <Avatar id="lineAvatar" displaySize="L" showBorder="true" displayShape="Square" press="onPressImage"/>
+                </VBox>
+                <VBox class="sapUiSmallMarginBegin">
+                    <Label text="{i18n>MATNR}" />
+                    <Title id="lineTitle"></Title>
+                </VBox>
+            </HBox>
+            <HBox justifyContent="SpaceBetween">
+                <f:SimpleForm editable="true" layout="ColumnLayout" columnsM="3" columnsL="4" columnsXL="6">
+                    <f:content>
+                        <core:Title text="{i18n>generalInformation}" />
+
+
+                        <Label text="{i18n>TO_RECEIVE}" />
+                        <Text id="idMENGEReceive" text="" />
+
+                        <Label text="{i18n>RECEIVE}" />
+                        <Input id="idWEMNGAdd" enabled="{globalModelNoEditables>/enableds}" change="onliveChangeMaskToNumeric" />
+
+                        <Label text="" />
+                        <Slider id="IdSliderKTMNG" min="0" enableTickmarks="true" class="sapUiMediumMarginBottom" width="100%" enabled="{globalModelNoEditables>/enableds}" liveChange="onChnageSlideBarQuantity">
+                            <ResponsiveScale tickmarksBetweenLabels="1"/>
+                        </Slider>
+
+                        <Label text="{i18n>Comments}" />
+                        <TextArea id="idTextArea" value="" enabled="{globalModelNoEditables>/enableds}" placeholder="{i18n>EnterComments}"/>
+
+                        <core:Title text="{i18n>PHOTOS}" />
+
+                        <!-- ÚNICO FileUploader para capturar/seleccionar fotos -->
+                        <Label text="{i18n>PHOTO}" />
+                        <Button icon="sap-icon://add-photo" enabled="{globalModelNoEditables>/enableds}" press="onCapturePhoto" type="Emphasized"></Button>
+
+                        <Label text="{i18n>SELECTPHOTO}" />
+                        <unified:FileUploader
+                        id="idFileUploader"
+                        buttonText="{i18n>SELECTPHOTO}"
+                        fileType="jpg,jpeg,png"
+                        mimeType="image/png,image/jpeg"
+                        placeholder="{i18n>SELECTPHOTO}"
+                        uploadOnChange="false"
+                        change="onFileUploaderChange"
+                        multiple="false"
+                        enabled="{globalModelNoEditables>/enableds}" />
+
+                        <!-- Preview de la imagen seleccionada/capturada -->
+                        <Label text="" />
+                        <Image id="idPhotoPreview" width="120px" visible="false"/>
+
+                        <Label text="{i18n>SEEPHOTO}"/>
+                        <Button id="idBtnSeePhoto" icon="sap-icon://image-viewer" enabled="true" press="onSeePhoto" type="Emphasized"/>
+                        
+                        <core:Title text="" />
+
+                        <Label text="{i18n>MENGE}" />
+                        <Text id="idMENGETotal" text="" />
+
+                        <Label text="{i18n>QTY_AVA}" />
+                        <Text id="idMENGEAdd" text="" />
+
+                        <Label text="{i18n>REC_AT}" />
+                        <DatePicker width="70%" id="IdEINDTDatePicker" displayFormat="yyyy-MM-dd" valueFormat="yyyy-MM-dd" placeholder="Select a date" enabled="false" />
+
+                        <Label text="" />
+                        <Link id="idLinkHideFormDetail" text="{i18n>moreDetail}" enabled="true" press="handleLinkPress"/>
+
+                    </f:content>
+                </f:SimpleForm>
+
+            </HBox>
+            
+            <HBox id="idMoreDetails" justifyContent="SpaceBetween" visible="false">
+                <!-- Column 1 -->
+                <f:SimpleForm editable="false" layout="ColumnLayout" columnsM="3" columnsL="4" columnsXL="6">
+                    <f:content>
+                        <core:Title text="{i18n>detail}" />
+
+                        <Label text="{i18n>CATEGORY}" />
+                        <Text id="idCATEGORY" text="" />
+
+                        <Label text="{i18n>FAMILY}" />
+                        <Text id="idFAMILY" text="" />
+
+                        <Label text="{i18n>BRAND}" />
+                        <Text id="idBRAND" text="" />
+
+                        <Label text="{i18n>MODEL}" />
+                        <Text id="idMODEL" text="" />
+
+                        <core:Title text="" />
+
+                        <Label text="{i18n>DIMENSIONS}" />
+                        <Text id="idDIMENSIONS" text="" />
+
+                        <Label text="{i18n>STANDARD_IND}" />
+                        <Switch id="idSTANDARD_IND" state="false" enabled="false" />
+
+                        <Label text="{i18n>IND_ACT_FIJO}" />
+                        <Switch id="idIND_ACT_FIJO" state="false" enabled="false" />
+
+                        <Label text="{i18n>HERITAGE}" />
+                        <Switch id="idHERITAGE" state="false" enabled="false" />
+
+                        <Label text="{i18n>SPECIALS}" />
+                        <Switch id="idSPECIALS" state="false" enabled="false" />
+
+                        <Label text="{i18n>FFE}" />
+                        <Switch id="idFFE" state="false" enabled="false" />
+
+                        <core:Title text="" />
+
+                        <Label text="{i18n>DIVISION}" />
+                        <Text id="idDIVISION" text="" />
+
+                        <Label text="{i18n>AREA}" />
+                        <Text id="idAREA" text="" />
+
+                        <Label text="{i18n>LOCATION}" />
+                        <Text id="idLOCATION" text="" />
+
+                        <Label text="{i18n>SUBLOCATION}" />
+                        <Text id="idSUBLOCATION" text="" />
+
+                        <Label text="{i18n>SUPPLIED}" />
+                        <Text id="idSUPPLIED" text="" />
+
+                        <Label text="{i18n>VIEW}" />
+                        <Text id="idVIEW" text="" />
+
+                        <Label text="{i18n>RECEP_XDIFICA}" />
+                        <Switch id="switchSTATUS" state="false" customTextOn=" " customTextOff=" " enabled="false" visible="true"/>
+
+                        <Label text="{i18n>GENERAL_STATUS}" />
+                        <ObjectStatus id="objDetailStatus" />
+
+                    </f:content>
+                </f:SimpleForm>
+            </HBox>
+
+        </content>
+        <buttons>
+            <Button id="btnBack" text="{i18n>back}" type="Emphasized" press=".onPreviuesPosition" />
+            <Button id="btnNext" text="{i18n>next}" type="Emphasized" press=".onNextPosition" />
+            <Button id="btnchange" text="Change" press="onChangeRow" type="Emphasized" icon="sap-icon://add" enabled="{globalModelNoEditables>/enableds}" visible="false" />
+            <Button id="btnsave" text="Save" press="onDialogSaveButton" type="Emphasized" icon="sap-icon://add" enabled="{globalModelNoEditables>/enableds}" visible="false" />
+            <Button text="{i18n>closeBtn}" press="onCloseChangeRef" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>
