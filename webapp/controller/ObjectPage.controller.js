@@ -7,7 +7,10 @@ sap.ui.define([
     "sap/m/MessageBox",
     "sap/ui/core/BusyIndicator",
     "sap/base/i18n/Localization",
-], (Controller, JSONModel, MessageToast, Fragment, Token, MessageBox, BusyIndicator, Localization) => {
+    "com/xcaret/recepcionarticulosoff/utils/Services",
+    "com/xcaret/recepcionarticulosoff/utils/Json",
+    "com/xcaret/recepcionarticulosoff/utils/Users"
+], (Controller, JSONModel, MessageToast, Fragment, Token, MessageBox, BusyIndicator, Localization, Services, Json, Users) => {
     "use strict";
     let inputsFields = [];
     let currentDate = new Date();
@@ -65,6 +68,12 @@ sap.ui.define([
     let host = "https://experiencias-xcaret-parques-s-a-p-i-de-c-v--xc-btpdev-15aca4ac6.cfapps.us10-001.hana.ondemand.com";
 
     return Controller.extend("com.xcaret.recepcionarticulosoff.controller.ObjectPage", {
+        // Constantes para gestión de sesiones
+        SESSION_UPDATE_INTERVAL: 60000, // 60 segundos
+        SESSION_TIMEOUT_MESSAGE: "Sesión expiró. Por favor, inicie edición nuevamente.",
+        SESSION_ERROR_MESSAGE: "Error al crear sesión. Intente nuevamente.",
+        SESSION_BLOCKED_MESSAGE: "Advertencia: No se pudo verificar el estado de bloqueo del documento.",
+
         onInit: async function () {
             oBuni18n = this.getOwnerComponent().getModel("i18n").getResourceBundle();
             sCurrentLanguage = oBuni18n.getText("idioma");
@@ -78,7 +87,9 @@ sap.ui.define([
                 STATUS_TEXT: "",
                 STATUS_ICON: "",
                 STATUS_STATE: "Success",
-                enabled_d: false
+                enabled_d: false,
+                // Nuevo código sesiones
+                messageStripText: ""
             });
             this.getView().setModel(oGlobalModel, "globalModel");
 
@@ -140,117 +151,7 @@ sap.ui.define([
             var sVn = this.getView().byId("titleName");
             sVn.setText(sNameComplete);
         },
-        /*
-        _onObjectMatched: async function (oEvent) {
-            this.bSignAuth = false; //sign
-            aUpdateRequerments = [];
-            sTotalHeader = 0.00;
-            this._scrollToHeader();
 
-            var oTable = this.getView().byId("ItemsTable");
-            oTable.removeSelections(true);
-
-            sObjectId = oEvent.getParameter("arguments").objectId;
-            smodeId = oEvent.getParameter("arguments").mode;
-
-            var oMultiInputProy = this.getView().byId("IdPSPNR");
-            oMultiInputProy.removeAllTokens();
-            sValidateOnBack = false;
-
-            this.sModeUpdate = this.getModeUpdate(sObjectId);
-            this.checkSignConfiguration(); //26.06.2025
-            // --- MODO OFFLINE ---
-            if (!window.navigator.onLine) {
-                // Leer el detalle de IndexDB (ScheduleLineDetail)
-                if (window.indexedDB) {
-                    const indexedDBService = sap.ui.require("com/xcaret/recepcionarticulosoff/model/indexedDBService");
-                    let detail = await indexedDBService.getById("ScheduleLineDetail", sObjectId);
-
-                    if (detail) {
-                        // Actualiza el modelo con el detalle
-                        this.getView().getModel("serviceModel").setProperty("/ScheduleLine", detail);
-                        // Actualiza totales
-                        this.onAddTotal(detail.items || []);
-                    } else {
-                        // Si no hay datos, muestra mensaje
-                        sap.m.MessageToast.show("No hay datos offline para este documento.");
-                        this.getView().getModel("serviceModel").setProperty("/ScheduleLine", {});
-                        this.onAddTotal([]);
-                    }
-                }
-                BusyIndicator.hide();
-                return; // Termina si estás offline
-            }
-
-            switch (smodeId) {
-                case "r"://Read
-                    //this.byId("switchLOEKZ").setEnabled(false);
-                    //edit
-                    //aDelPos = [];
-                    this._clearMultiInputs();
-                    this._cleanViewFields();
-                    this.getView().byId("idBtnEdit").setVisible(true);
-                    //this.getView().byId("idBtnEdit").setVisible(false);
-                    //this.byId("switchXdifica").setEnabled(false);
-                    //this.byId("switchXdifica").setState(false);
-                    this.byId("IdEINDTDatePicker2").setValue(currentDate.toISOString().split("T")[0]);
-                    this.byId("idBttonReference").setEnabled(false);
-                    this.onEditFields(false, smodeId);
-                    oMultiInputProy.setEnabled(false);
-                    aIdEBELN = [];
-                    aIdEBELN.push(sObjectId);
-                    this.multiQuery();
-                    //this._onQuery("RequirementProject");
-                    this._onQuery("ProgAlmacen");
-                    this._setEnabledEditPos(false);
-                    this.enableFieldsBySign(); //sign
-                    BusyIndicator.hide();
-                    break;
-                case "c"://Copy
-                    this.onGetDetailData(sObjectId);
-                    this.onEditFields(true, smodeId);
-                    this.byId("IdERNAMInput").setValue(sUserName);
-                    this.onAddTotal([]);
-                    BusyIndicator.hide();
-                    break;
-                case "a"://Add
-                    //aDelPos = [];
-                    this._clearMultiInputs();
-                    this._cleanViewFields();
-
-                    //edit
-                    this.getView().byId("idBtnEdit").setVisible(false);
-                    this.byId("switchXdifica").setEnabled(false);
-                    this.byId("switchXdifica").setState(false);
-                    this.byId("idBttonReference").setEnabled(false);
-
-                    //Proyecto
-                    oMultiInputProy.setEnabled(true);
-
-                    let oModelZ = new sap.ui.model.json.JSONModel();
-                    this.getView().setModel(oModelZ, "serviceModel");
-
-                    this.multiQuery();
-                    this.onEditFields(true, smodeId);
-
-                    this.byId("IdEINDTDatePicker").setValue(currentDate.toISOString().split("T")[0]);
-
-                    this.onAddTotal([]);
-                    //////////////////Roles
-                    var oModelRol = this.getView().getModel("serviceModel");
-                    const aCurrentRole = oModelRol.getProperty("/generalRol")
-                    if (aCurrentRole) {
-                        this.validateRol(aCurrentRole);
-                    }
-                    this._setViewProperties();
-                    BusyIndicator.hide();
-                    //////////////////
-                    break;
-                default:
-                    break;
-            }
-        },
-        */
         // Offline
         _onObjectMatched: async function (oEvent) {
             this.bSignAuth = false; //sign
@@ -360,6 +261,76 @@ sap.ui.define([
             // --- MODO ONLINE ---
             this.sModeUpdate = this.getModeUpdate(sObjectId);
             this.checkSignConfiguration(); //26.06.2025
+            
+            // --------- GESTIÓN DE SESIÓN: BLOQUEO (SOLO MODO ONLINE) ---------
+            if (smodeId === "r" && sObjectId !== "New") {
+                // Solo verificar sesiones si está online
+                if (typeof indexedDBService !== 'undefined' && indexedDBService.isOnline()) {
+                    try {
+                        // 1. Consultar si el documento está bloqueado por otro usuario
+                        const sessionBlocked = await Services.GetSession(this, sObjectId);
+                        const oGlobalModel = this.getView().getModel("globalModel");
+
+                        if (sessionBlocked) {
+                            // 2. Si está bloqueado, verificar si es por el usuario actual
+                            const oSession = this.getView().getModel("serviceModel").getProperty("/Session") || {};
+                            const currentUser = Users.getUserInfo();
+                            const sessionUser = oSession.ERNAM;
+
+                            console.log("🔍 Verificación inicial de bloqueo:");
+                            console.log("🔍 Usuario actual:", currentUser.sUserId);
+                            console.log("🔍 Usuario de sesión:", sessionUser);
+                            console.log("🔍 ¿Es el mismo usuario?", currentUser.sUserId === sessionUser);
+
+                            // Solo bloquear si es un usuario diferente
+                            if (currentUser.sUserId !== sessionUser) {
+                                // Documento bloqueado por otro usuario
+                                console.log("🔒 Documento bloqueado por otro usuario:", sObjectId);
+                                oGlobalModel.setProperty("/enabled", false);
+                                this.byId("idBtnEdit").setEnabled(false);
+                                this.byId("idBtnSave").setEnabled(false);
+
+                                // Extraer nombre del ERNAM híbrido para el modelo global
+                                this._showBlockedMessageFromHybridERNAMGlobal(oSession.ERNAM);
+
+                            } else {
+                                // Es el mismo usuario, permitir edición
+                                console.log("✅ Documento bloqueado por usuario actual, permitiendo edición:", sObjectId);
+                                oGlobalModel.setProperty("/enabled", false); // solo lectura
+                                oGlobalModel.setProperty("/messageStripText", "");
+                                this.byId("idBtnEdit").setEnabled(true);
+                                this.byId("idBtnSave").setEnabled(true);
+                            }
+                        } else {
+                            // Si NO está bloqueado, oculta mensaje y sigue flujo normal
+                            console.log("✅ Documento disponible para edición:", sObjectId);
+                            oGlobalModel.setProperty("/enabled", false); // solo lectura
+                            oGlobalModel.setProperty("/messageStripText", "");
+                            this.byId("idBtnEdit").setEnabled(true);
+                            this.byId("idBtnSave").setEnabled(true);
+                        }
+                    } catch (e) {
+                        console.error("❌ Error verificando sesión del documento:", e);
+                        // En caso de error, permitir edición pero mostrar advertencia
+                        const oGlobalModel = this.getView().getModel("globalModel");
+                        oGlobalModel.setProperty("/messageStripText", this.SESSION_BLOCKED_MESSAGE);
+                        this.byId("idBtnEdit").setEnabled(true);
+                        this.byId("idBtnSave").setEnabled(true);
+                    }
+                } else {
+                    // Modo offline: no verificar sesiones
+                    console.log("📱 Modo offline: No se verifica gestión de sesiones");
+                    const oGlobalModel = this.getView().getModel("globalModel");
+                    oGlobalModel.setProperty("/messageStripText", "");
+                    this.byId("idBtnEdit").setEnabled(true);
+                    this.byId("idBtnSave").setEnabled(true);
+                }
+            } else {
+                // Si es modo creación/copia, flujo normal y oculta mensaje
+                const oGlobalModel = this.getView().getModel("globalModel");
+                oGlobalModel.setProperty("/messageStripText", "");
+            }
+            
             console.log(smodeId)
             switch (smodeId) {
                 case "r"://Read
@@ -2190,16 +2161,194 @@ sap.ui.define([
 
         ////////////////////////////////////////////////Begin functionlaity buttons//////////////////////////////////////
 
-        onEditFieldsBtn: function (oEvent) {
-            var bXdifica = this._getXdificaIndicator();
-            this.onEditFields(true);
-            //this.byId("switchXdifica").setEnabled(bXdifica);
-            //this.byId("switchXdifica").setState(false);
-            this.byId("idBttonReference").setEnabled(true);
+        onEditFieldsBtn: async function (oEvent) {
+            // Verificar si estamos en modo offline
+            if (typeof indexedDBService !== 'undefined' && !indexedDBService.isOnline()) {
+                // Modo offline: funcionalidad existente sin gestión de sesiones
+                console.log("📱 Modo offline: Funcionalidad de edición sin gestión de sesiones");
+                var bXdifica = this._getXdificaIndicator();
+                this.onEditFields(true);
+                this.byId("idBttonReference").setEnabled(true);
+                var oGlobalModel = this.getView().getModel("globalModel");
+                oGlobalModel.setProperty("/xdifica", bXdifica);
+                var smg1 = oBuni18n.getText("EDIT_MSG");
+                sap.m.MessageToast.show(smg1);
+                return;
+            }
+
+            // Modo online: gestión de sesiones
+            console.log("🌐 Modo online: Iniciando gestión de sesiones");
+            await this.onEditFieldsOnline();
+        },
+
+        // Función para gestión de sesiones en modo online
+        onEditFieldsOnline: async function () {
             var oGlobalModel = this.getView().getModel("globalModel");
-            oGlobalModel.setProperty("/xdifica", bXdifica);
-            var smg1 = oBuni18n.getText("EDIT_MSG");
-            sap.m.MessageToast.show(smg1);
+            var oServiceModel = this.getView().getModel("serviceModel");
+            var oBuni18n = this.getOwnerComponent().getModel("i18n").getResourceBundle();
+
+            // Debug: Verificar estado del modelo antes de crear sesión
+            const oModel = this.getView().getModel("serviceModel");
+            const oScheduleLine = oModel.getProperty("/ScheduleLine");
+            console.log("🔍 Estado del modelo antes de crear sesión:");
+            console.log("🔍 sObjectId:", sObjectId);
+            console.log("🔍 ScheduleLine en modelo:", oScheduleLine);
+            console.log("🔍 EBELN disponible:", oScheduleLine?.EBELN);
+
+            // --- GESTIÓN DE SESIONES: VERIFICACIÓN ANTES DE EDITAR ---
+            try {
+                // Verificar si el documento ya está bloqueado antes de intentar crear sesión
+                const sessionBlocked = await Services.GetSession(this, sObjectId);
+                if (sessionBlocked) {
+                    // Documento ya está bloqueado, verificar si es por el usuario actual
+                    const oSession = oServiceModel.getProperty("/Session") || {};
+                    const currentUser = Users.getUserInfo();
+                    const sessionUser = oSession.ERNAM;
+                    
+                    console.log("🔍 Verificación de bloqueo:");
+                    console.log("🔍 Usuario actual:", currentUser.sUserId);
+                    console.log("🔍 Usuario de sesión:", sessionUser);
+                    console.log("🔍 ¿Es el mismo usuario?", currentUser.sUserId === sessionUser);
+                    
+                    // Solo bloquear si es un usuario diferente
+                    if (currentUser.sUserId !== sessionUser) {
+                        // Documento bloqueado por otro usuario
+                        // Extraer nombre del ERNAM híbrido para el modelo global
+                        this._showBlockedMessageFromHybridERNAMGlobal(oSession.ERNAM);
+                        this.onEditFields(false, smodeId);
+                        return; // Prevenir edición
+                    } else {
+                        // Es el mismo usuario, continuar con la edición
+                        console.log("✅ Documento bloqueado por el usuario actual, continuando con edición");
+                    }
+                }
+
+                // Limpiar sesión existente si existe
+                try {
+                    const oModel = this.getView().getModel("serviceModel");
+                    const oDoc = oModel.getProperty("/ScheduleLine") || {};
+                    const sDocId = oDoc.EBELN || this.sObjMBLRN || sObjectId;
+                    
+                    if (sDocId && sDocId !== "New") {
+                        console.log("🧹 Limpiando sesión existente antes de crear nueva:", sDocId);
+                        await Services.DeleteSession(sDocId);
+                    }
+                } catch (e) {
+                    console.warn("⚠️ Advertencia al limpiar sesión existente:", e);
+                }
+                
+                // Intenta crear la sesión/lock
+                try {
+                    console.log("🔐 Intentando crear sesión para documento:", sObjectId);
+                    
+                    // Validar que CreateSession retorne datos válidos
+                    const sessionData = Json.CreateSession(this, sObjectId);
+                    if (!sessionData) {
+                        console.error("❌ No se pudo crear datos de sesión");
+                        const oGlobalModel = this.getView().getModel("globalModel");
+                        if (oGlobalModel) {
+                            oGlobalModel.setProperty("/messageStripText", "Error: No se pudo crear la sesión. Verifique los datos del documento.");
+                        }
+                        this.onEditFields(false, smodeId);
+                        return;
+                    }
+                    
+                    console.log("📋 Datos de sesión a enviar:", sessionData);
+                    const sessionCreated = await Services.PostSession(this, sessionData);
+                    
+                    if (sessionCreated && sessionCreated.length > 0) {
+                        // Lock exitoso: permite edición y comienza a renovar lock
+                        console.log("✅ Sesión creada exitosamente:", sessionCreated);
+                        
+                        if (this._sessionInterval) {
+                            clearInterval(this._sessionInterval);
+                            this._sessionInterval = null;
+                        }
+                        
+                        this._sessionInterval = setInterval(async () => {
+                            try {
+                                // 1. Verificar primero si la sesión aún existe en la base de datos
+                                const sessionExists = await Services.GetSession(this, sObjectId);
+                                if (!sessionExists) {
+                                    console.log("🔄 Sesión ya no existe en la base de datos, deteniendo intervalo");
+                                    clearInterval(this._sessionInterval);
+                                    this._sessionInterval = null;
+                                    this.onEditFields(false, smodeId);
+                                    return;
+                                }
+                                
+                                // 2. Validar que UpdateSession retorne datos válidos
+                                const updateData = Json.UpdateSession(this, sObjectId);
+                                if (!updateData) {
+                                    console.error("❌ No se pudo crear datos de actualización de sesión");
+                                    clearInterval(this._sessionInterval);
+                                    this._sessionInterval = null;
+                                    this.onEditFields(false, smodeId);
+                                    return;
+                                }
+                                
+                                // 3. Actualizar la sesión
+                                const result = await Services.UpdateSession(this, updateData);
+                                if (!result || result.error) {
+                                    // Sesión expiró o hay error, limpiar y deshabilitar edición
+                                    console.warn("⚠️ Sesión expiró o error en actualización:", result);
+                                    clearInterval(this._sessionInterval);
+                                    this._sessionInterval = null;
+                                    this.onEditFields(false, smodeId);
+                                    
+                                    // Mostrar mensaje al usuario
+                                    const oGlobalModel = this.getView().getModel("globalModel");
+                                    if (oGlobalModel) {
+                                        oGlobalModel.setProperty("/messageStripText", this.SESSION_TIMEOUT_MESSAGE);
+                                    }
+                                } else {
+                                    console.log("🔄 Sesión renovada exitosamente");
+                                }
+                            } catch (e) {
+                                console.error("❌ Error actualizando sesión:", e);
+                                // En caso de error, limpiar intervalo y deshabilitar edición
+                                clearInterval(this._sessionInterval);
+                                this._sessionInterval = null;
+                                this.onEditFields(false, smodeId);
+                            }
+                        }, this.SESSION_UPDATE_INTERVAL);
+                        
+                        // Continuar con la lógica original de edición
+                        var bXdifica = this._getXdificaIndicator();
+                        this.onEditFields(true);
+                        this.byId("idBttonReference").setEnabled(true);
+                        var oGlobalModel = this.getView().getModel("globalModel");
+                        oGlobalModel.setProperty("/xdifica", bXdifica);
+                        var smg1 = oBuni18n.getText("EDIT_MSG");
+                        sap.m.MessageToast.show(smg1);
+                        
+                    } else {
+                        // Lock fallido: no permite edición
+                        console.error("❌ No se pudo crear sesión:", sessionCreated);
+                        const oGlobalModel = this.getView().getModel("globalModel");
+                        if (oGlobalModel) {
+                            oGlobalModel.setProperty("/messageStripText", "Error: No se pudo crear la sesión. Intente nuevamente.");
+                        }
+                        this.onEditFields(false, smodeId);
+                    }
+                    
+                } catch (e) {
+                    console.error("❌ Error en la gestión de sesiones:", e);
+                    const oGlobalModel = this.getView().getModel("globalModel");
+                    if (oGlobalModel) {
+                        oGlobalModel.setProperty("/messageStripText", "Error: No se pudo procesar la solicitud de edición. Intente nuevamente.");
+                    }
+                    this.onEditFields(false, smodeId);
+                }
+                
+            } catch (e) {
+                console.error("❌ Error en la gestión de sesiones:", e);
+                const oGlobalModel = this.getView().getModel("globalModel");
+                if (oGlobalModel) {
+                    oGlobalModel.setProperty("/messageStripText", "Error: No se pudo procesar la solicitud de edición. Intente nuevamente.");
+                }
+                this.onEditFields(false, smodeId);
+            }
         },
 
         _getXdificaIndicator: function () {
@@ -3466,20 +3615,55 @@ sap.ui.define([
         },
 
         onSelectionChange: function (oEvent) {
-            /*
-            var oSelectedItem = oEvent.getParameter("listItem");
-            var oContext = oSelectedItem.getBindingContext("detailModel");
-            var sConfValue = oContext.getProperty("CONF");
-            // Verificar si el valor de CONF es 3 o 4, y prevenir la selección si es así
-            if (sConfValue === "3" || sConfValue === "4" || sConfValue === "5") {
-                oEvent.preventDefault();
-                if (oSelectedItem.getSelected()) {
-                    oSelectedItem.setSelected(false);
+            const oTable = this.byId("ItemsTable");
+            const bSelectAll = oEvent.getParameter("selectAll");
+            const oModel = this.getView().getModel("serviceModel");
+            let selectedCount = 0;
+            let blockedCount = 0;
+
+            if (bSelectAll) {
+                oTable.removeSelections(true); // Limpia selecciones previas
+
+                oTable.getItems().forEach(function (oListItem) {
+                    const sPath = oListItem.getBindingContext("serviceModel").getPath();
+                    const item = oModel.getProperty(sPath);
+                    if (parseInt(item.STATU) !== 3) {
+                        oTable.setSelectedItem(oListItem, true);
+                        selectedCount++;
+                    } else {
+                        oTable.setSelectedItem(oListItem, false);
+                        blockedCount++;
+                    }
+                });
+
+                // Mensaje personalizado
+                if (selectedCount > 0) {
+                    sap.m.MessageToast.show(
+                        `Se seleccionaron ${selectedCount} elementos.`
+                        + (blockedCount > 0 ? ` (${blockedCount} elementos no pueden seleccionarse por su estatus)` : "")
+                    );
+                } else {
+                    sap.m.MessageToast.show("Ningún elemento puede seleccionarse debido a su estatus.");
                 }
-                sap.m.MessageToast.show(oBuni18n.getText("msgSelectionItems"));
+            } else {
+                // Selección individual
+                const aSelectedItems = oTable.getSelectedItems();
+                let manualBlocked = 0;
+                aSelectedItems.forEach((oListItem) => {
+                    const sPath = oListItem.getBindingContext("serviceModel").getPath();
+                    const item = oModel.getProperty(sPath);
+                    if (parseInt(item.STATU) === 3) {
+                        oListItem.setSelected(false);
+                        manualBlocked++;
+                    }
+                });
+
+                if (manualBlocked > 0) {
+                    sap.m.MessageToast.show(
+                        `${manualBlocked} elemento${manualBlocked > 1 ? 's' : ''} no pueden seleccionarse por su estatus.`
+                    );
+                }
             }
-            */
-            this._removeSpecialsSelections(oEvent.getParameter("selectAll"));
         },
 
         onCancelEdit: function (oEvent) {
@@ -6270,8 +6454,88 @@ sap.ui.define([
                 }.bind(this);
                 reader.readAsDataURL(file);
             }
-        }
-        */
+        },
+
+        /**
+         * Extrae y muestra el nombre del usuario desde el ERNAM híbrido en el modelo global
+         * @param {string} sHybridERNAM - ERNAM con formato "8charsUUID_NOMBRE_APELLIDO"
+         */
+        _showBlockedMessageFromHybridERNAMGlobal: function (sHybridERNAM) {
+            const oGlobalModel = this.getView().getModel("globalModel");
+            const oBuni18n = this.getOwnerComponent().getModel("i18n").getResourceBundle();
+            
+            if (!sHybridERNAM || !sHybridERNAM.trim()) {
+                oGlobalModel.setProperty("/messageStripText", oBuni18n.getText("I_F_Blocked_Generic") || "Documento bloqueado por otro usuario");
+                return;
+            }
+
+            // Extraer nombre del ERNAM híbrido
+            const displayName = this._extractDisplayNameFromHybridERNAM(sHybridERNAM);
+            
+            if (displayName) {
+                console.log("✅ Mostrando nombre extraído del ERNAM en modelo global:", displayName);
+                oGlobalModel.setProperty("/messageStripText", (oBuni18n.getText("I_F_Blocked") || "Documento bloqueado por {0}").replace("{0}", displayName));
+            } else {
+                console.log("⚠️ No se pudo extraer nombre, mostrando ERNAM completo en modelo global:", sHybridERNAM);
+                oGlobalModel.setProperty("/messageStripText", (oBuni18n.getText("I_F_Blocked") || "Documento bloqueado por {0}").replace("{0}", sHybridERNAM));
+            }
+        },
+
+        /**
+         * Extrae el nombre del usuario desde el ERNAM híbrido
+         * @param {string} sHybridERNAM - ERNAM con formato "8charsUUID_NOMBRE_APELLIDO"
+         * @returns {string|null} Nombre del usuario o null si no se puede extraer
+         */
+        _extractDisplayNameFromHybridERNAM: function (sHybridERNAM) {
+            try {
+                // Buscar el guión bajo que separa el ID del nombre
+                const underscoreIndex = sHybridERNAM.indexOf('_');
+                
+                if (underscoreIndex === -1) {
+                    // No hay guión bajo, es solo el ID
+                    console.log("⚠️ ERNAM no tiene formato híbrido:", sHybridERNAM);
+                    return null;
+                }
+                
+                // Extraer la parte después del guión bajo (nombre y apellido)
+                const displayName = sHybridERNAM.substring(underscoreIndex + 1);
+                
+                if (displayName && displayName.trim()) {
+                    return displayName.trim();
+                } else {
+                    console.log("⚠️ Nombre extraído está vacío:", displayName);
+                    return null;
+                }
+                
+            } catch (e) {
+                console.error("❌ Error extrayendo nombre del ERNAM:", e);
+                return null;
+            }
+        },
+
+        onExit: async function () {
+            // Session Management - Clean up intervals when controller is destroyed
+            if (this._sessionInterval) {
+                clearInterval(this._sessionInterval);
+                this._sessionInterval = null;
+            }
+
+            // Liberar sesión activa si existe (solo en modo online)
+            if (typeof indexedDBService !== 'undefined' && indexedDBService.isOnline() && sObjectId && sObjectId !== "New") {
+                try {
+                    console.log("🧹 Limpiando sesión al salir del controlador:", sObjectId);
+                    const deleteResult = await Services.DeleteSession(sObjectId);
+                    if (deleteResult && deleteResult !== "Error") {
+                        console.log("✅ Sesión liberada exitosamente al salir");
+                    } else {
+                        console.warn("⚠️ Advertencia al liberar sesión al salir:", deleteResult);
+                    }
+                } catch (e) {
+                    console.error("❌ Error liberando sesión al salir:", e);
+                }
+            }
+        },
+
         // Offline
         onFileUploaderChange: function (oEvent) {
             var files = oEvent.getParameter("files");

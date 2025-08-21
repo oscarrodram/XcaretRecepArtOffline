@@ -8,8 +8,9 @@ sap.ui.define([
     "sap/m/MessageBox",
     "sap/ui/comp/smartvariants/PersonalizableInfo",
     "sap/ui/core/BusyIndicator",
-    "com/xcaret/recepcionarticulosoff/model/indexedDBService"
-], (Controller, Dialog, Label, Button, Input, Switch, MessageBox, PersonalizableInfo, BusyIndicator, indexedDBService) => {
+    "com/xcaret/recepcionarticulosoff/model/indexedDBService",
+    "com/xcaret/recepcionarticulosoff/utils/Services"
+], (Controller, Dialog, Label, Button, Input, Switch, MessageBox, PersonalizableInfo, BusyIndicator, indexedDBService, Services) => {
     "use strict";
     var vInitialDate, vFinalDate, currentDate = new Date();
     let sUserID = "DEFAULT_USER", sFName, sLName, sEmail;
@@ -38,6 +39,11 @@ sap.ui.define([
             this.onCalculateDatesBefore(60);
             let oModel = new sap.ui.model.json.JSONModel();
             this.getView().setModel(oModel, "serviceModel");
+            
+            // --- GESTIÓN DE SESIONES: LIMPIEZA AL INICIAR LA VISTA PRINCIPAL ---
+            // Mover la limpieza de sesiones a una función separada para evitar bloqueo
+            this._cleanupUserSessions();
+            
             this.multiQuery();
 
             this.oSmartVariantManagement = this.getView().byId("svm");
@@ -392,7 +398,18 @@ sap.ui.define([
             }
         },
 
-        onInitialMainPage: function () {
+        onInitialMainPage: async function () {
+            try {
+                const deleteResult = await Services.DeleteAllSessions();
+                if (deleteResult && deleteResult !== "Error") {
+                    console.log("✅ Sesiones inactivas limpiadas exitosamente");
+                } else {
+                    console.warn("⚠️ Advertencia al limpiar sesiones inactivas:", deleteResult);
+                }
+            } catch (e) {
+                console.error("❌ Error limpiando sesiones inactivas:", e);
+            }
+
             BusyIndicator.hide();
             oSkip = 0;
             this.iTotalItems = null;
@@ -1550,6 +1567,20 @@ sap.ui.define([
         // End Navigations ######################### Create, Copy & Read ----- #########################
         //////////////////////////////////////////////////
         /////////////////////////////////////////////////
+
+        // Función auxiliar para limpiar sesiones del usuario
+        _cleanupUserSessions: function () {
+            // Ejecutar la limpieza de sesiones de manera asíncrona sin bloquear onInit
+            Services.DeleteUserSessions().then(deleteResult => {
+                if (deleteResult && deleteResult !== "Error") {
+                    console.log("✅ Sesiones del usuario limpiadas exitosamente");
+                } else {
+                    console.warn("⚠️ Advertencia al limpiar sesiones del usuario:", deleteResult);
+                }
+            }).catch(e => {
+                console.error("❌ Error limpiando sesiones del usuario:", e);
+            });
+        },
 
     });
 });

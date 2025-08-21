@@ -12,6 +12,46 @@
                     <Label text="{i18n>MATNR}" />
                     <Title id="lineTitle"></Title>
                 </VBox>
+                <VBox class="sapUiSmallMarginBegin">
+                    <Label text="{i18n>CATEGORY}" />
+                    <Text id="idCATEGORY" text="" />
+
+                    <Label text="{i18n>FAMILY}" />
+                    <Text id="idFAMILY" text="" />
+                </VBox>
+                <VBox class="sapUiLargeMarginBegin">
+                    <Label text="{i18n>BRAND}" />
+                    <Text id="idBRAND" text="" />
+
+                    <Label text="{i18n>MODEL}" />
+                    <Text id="idMODEL" text="" />
+                </VBox>
+                <VBox class="sapUiLargeMarginBegin">
+                    <Label text="{i18n>DIMENSIONS}" />
+                    <Text id="idDIMENSIONS" text="" />
+                </VBox>
+            </HBox>
+            <HBox justifyContent="SpaceAround" class="sapUiSmallMarginTop">
+                <VBox class="">
+                    <Label text="" />
+                    <Text text="" />
+                </VBox>
+                <VBox class="sapUiLargeMarginBegin">
+                    <Label text="{i18n>DIVISION}" />
+                    <Text id="idDIVISION" text="" />
+                </VBox>
+                 <VBox class="sapUiLargeMarginBegin">
+                    <Label text="{i18n>AREA}" />
+                    <Text id="idAREA" text="" />
+                </VBox>
+                 <VBox class="sapUiLargeMarginBegin">
+                    <Label text="{i18n>LOCATION}" />
+                    <Text id="idLOCATION" text="" />
+                </VBox>
+                 <VBox class="sapUiLargeMarginBegin">
+                    <Label text="{i18n>SUBLOCATION}" />
+                    <Text id="idSUBLOCATION" text="" />
+                </VBox>
             </HBox>
             <HBox justifyContent="SpaceBetween">
                 <f:SimpleForm editable="true" layout="ColumnLayout" columnsM="3" columnsL="4" columnsXL="6">
@@ -83,7 +123,7 @@
                     <f:content>
                         <core:Title text="{i18n>detail}" />
 
-                        <Label text="{i18n>CATEGORY}" />
+                        <!--<Label text="{i18n>CATEGORY}" />
                         <Text id="idCATEGORY" text="" />
 
                         <Label text="{i18n>FAMILY}" />
@@ -93,12 +133,12 @@
                         <Text id="idBRAND" text="" />
 
                         <Label text="{i18n>MODEL}" />
-                        <Text id="idMODEL" text="" />
+                        <Text id="idMODEL" text="" />-->
 
-                        <core:Title text="" />
+                        <!--<core:Title text="" />
 
                         <Label text="{i18n>DIMENSIONS}" />
-                        <Text id="idDIMENSIONS" text="" />
+                        <Text id="idDIMENSIONS" text="" />-->
 
                         <Label text="{i18n>STANDARD_IND}" />
                         <Switch id="idSTANDARD_IND" state="false" enabled="false" />
@@ -117,7 +157,7 @@
 
                         <core:Title text="" />
 
-                        <Label text="{i18n>DIVISION}" />
+                        <!--<Label text="{i18n>DIVISION}" />
                         <Text id="idDIVISION" text="" />
 
                         <Label text="{i18n>AREA}" />
@@ -127,7 +167,7 @@
                         <Text id="idLOCATION" text="" />
 
                         <Label text="{i18n>SUBLOCATION}" />
-                        <Text id="idSUBLOCATION" text="" />
+                        <Text id="idSUBLOCATION" text="" />-->
 
                         <Label text="{i18n>SUPPLIED}" />
                         <Text id="idSUPPLIED" text="" />

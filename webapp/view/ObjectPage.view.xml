@@ -434,6 +434,14 @@
     </layout:sections>
     <ux:footer>
 			<OverflowToolbar id="editOverFlowToolbar" visible="true">
+                <MessageStrip
+                    id="idSessionMessageStrip"
+                    text="{globalModel>/messageStripText}"
+                    type="Information"
+                    showIcon="true"
+                    visible="{= !!${globalModel>/messageStripText} }"
+                    class="sapUiTinyMarginTop"
+                />
 			    <Button id="messagePopoverBtn"
 				    visible="false"
 					icon= "sap-icon://error"
