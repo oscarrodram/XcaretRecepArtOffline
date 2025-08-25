@@ -39,11 +39,11 @@ sap.ui.define([
             this.onCalculateDatesBefore(60);
             let oModel = new sap.ui.model.json.JSONModel();
             this.getView().setModel(oModel, "serviceModel");
-            
+
             // --- GESTIÓN DE SESIONES: LIMPIEZA AL INICIAR LA VISTA PRINCIPAL ---
             // Mover la limpieza de sesiones a una función separada para evitar bloqueo
             this._cleanupUserSessions();
-            
+
             this.multiQuery();
 
             this.oSmartVariantManagement = this.getView().byId("svm");
@@ -69,6 +69,9 @@ sap.ui.define([
             this.bIsOnline = indexedDBService.isOnline();
             window.addEventListener("online", this._handleOnline.bind(this));
             window.addEventListener("offline", this._handleOffline.bind(this));
+
+            const oRouter = this.getOwnerComponent().getRouter();
+            oRouter.getRoute("Main").attachPatternMatched(this._onMainMatched, this);
 
             BusyIndicator.hide();
         },
@@ -199,7 +202,88 @@ sap.ui.define([
         * Sincroniza firmas pendientes guardadas en IndexedDB (store Signatures y PendingOps) cuando vuelves a estar online.
         * Sube cada firma con pending: true al backend y/o elimina en backend si es tipo delete.
         */
-       /*
+        /*
+         syncPendingSignatures: async function () {
+             sap.ui.require(["com/xcaret/recepcionarticulosoff/model/indexedDBService"], async function (indexedDBService) {
+                 let pendingOps = await indexedDBService.getPendingOps();
+                 // Filtra solo operaciones de firmas
+                 let signatureOps = pendingOps.filter(op => op.type === "Signature");
+                 if (!signatureOps || signatureOps.length === 0) {
+                     sap.m.MessageToast.show("No hay firmas pendientes por sincronizar.");
+                     return;
+                 }
+ 
+                 let successCount = 0, errorCount = 0;
+ 
+                 for (let op of signatureOps) {
+                     try {
+                         if (op.opType === "create") {
+                             // 1. Convierte base64 a Blob
+                             let sign = op.data;
+                             let byteString = atob(sign.image);
+                             let ab = new ArrayBuffer(byteString.length);
+                             let ia = new Uint8Array(ab);
+                             for (let i = 0; i < byteString.length; i++) {
+                                 ia[i] = byteString.charCodeAt(i);
+                             }
+                             let blob = new Blob([ab], { type: sign.mimeType || "image/jpeg" });
+ 
+                             // 2. Arma FormData igual que uploadSignature
+                             let formData = new FormData();
+                             formData.append("image", blob, "signature.jpeg");
+                             formData.append("metadata", JSON.stringify([{
+                                 DOCID: sign.DOCID,
+                                 ID: sign.ID,
+                                 PROCESS: sign.PROCESS,
+                                 SUBPROCESS: sign.SUBPROCESS
+                             }]));
+ 
+                             // 3. Sube la firma al backend
+                             let response = await fetch(host + "/ImageSignItem", {
+                                 method: "POST",
+                                 body: formData
+                             });
+ 
+                             if (response.ok) {
+                                 // Marca como sincronizada y elimina de pendientes
+                                 await indexedDBService.markSignatureAsSynced(sign.id);
+                                 await indexedDBService.deletePendingOp(op.id);
+                                 successCount++;
+                             } else {
+                                 errorCount++;
+                             }
+                         } else if (op.opType === "delete") {
+                             // 1. Elimina la firma en backend
+                             let delItem = op.data;
+                             let res = await fetch(host + "/ImageSignItem", {
+                                 method: "DELETE",
+                                 headers: { "Content-Type": "application/json" },
+                                 body: JSON.stringify([{
+                                     DOCID: delItem.DOCID,
+                                     ID: delItem.ID,
+                                     PROCESS: delItem.PROCESS,
+                                     SUBPROCESS: delItem.SUBPROCESS
+                                 }])
+                             });
+                             if (res.ok) {
+                                 await indexedDBService.deletePendingOp(op.id);
+                                 // También podrías eliminarla localmente si no lo has hecho antes
+                                 await indexedDBService.deleteSignature(delItem.DOCID + "_" + delItem.ID + "_" + sEmail);
+                                 successCount++;
+                             } else {
+                                 errorCount++;
+                             }
+                         }
+                     } catch (err) {
+                         errorCount++;
+                         console.error("Error al sincronizar firma pendiente:", err);
+                     }
+                 }
+ 
+                 sap.m.MessageToast.show(`Sincronización de firmas finalizada. ${successCount} exitosas, ${errorCount} con error.`);
+             });
+         },
+         */
         syncPendingSignatures: async function () {
             sap.ui.require(["com/xcaret/recepcionarticulosoff/model/indexedDBService"], async function (indexedDBService) {
                 let pendingOps = await indexedDBService.getPendingOps();
@@ -212,87 +296,6 @@ sap.ui.define([
 
                 let successCount = 0, errorCount = 0;
 
-                for (let op of signatureOps) {
-                    try {
-                        if (op.opType === "create") {
-                            // 1. Convierte base64 a Blob
-                            let sign = op.data;
-                            let byteString = atob(sign.image);
-                            let ab = new ArrayBuffer(byteString.length);
-                            let ia = new Uint8Array(ab);
-                            for (let i = 0; i < byteString.length; i++) {
-                                ia[i] = byteString.charCodeAt(i);
-                            }
-                            let blob = new Blob([ab], { type: sign.mimeType || "image/jpeg" });
-
-                            // 2. Arma FormData igual que uploadSignature
-                            let formData = new FormData();
-                            formData.append("image", blob, "signature.jpeg");
-                            formData.append("metadata", JSON.stringify([{
-                                DOCID: sign.DOCID,
-                                ID: sign.ID,
-                                PROCESS: sign.PROCESS,
-                                SUBPROCESS: sign.SUBPROCESS
-                            }]));
-
-                            // 3. Sube la firma al backend
-                            let response = await fetch(host + "/ImageSignItem", {
-                                method: "POST",
-                                body: formData
-                            });
-
-                            if (response.ok) {
-                                // Marca como sincronizada y elimina de pendientes
-                                await indexedDBService.markSignatureAsSynced(sign.id);
-                                await indexedDBService.deletePendingOp(op.id);
-                                successCount++;
-                            } else {
-                                errorCount++;
-                            }
-                        } else if (op.opType === "delete") {
-                            // 1. Elimina la firma en backend
-                            let delItem = op.data;
-                            let res = await fetch(host + "/ImageSignItem", {
-                                method: "DELETE",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify([{
-                                    DOCID: delItem.DOCID,
-                                    ID: delItem.ID,
-                                    PROCESS: delItem.PROCESS,
-                                    SUBPROCESS: delItem.SUBPROCESS
-                                }])
-                            });
-                            if (res.ok) {
-                                await indexedDBService.deletePendingOp(op.id);
-                                // También podrías eliminarla localmente si no lo has hecho antes
-                                await indexedDBService.deleteSignature(delItem.DOCID + "_" + delItem.ID + "_" + sEmail);
-                                successCount++;
-                            } else {
-                                errorCount++;
-                            }
-                        }
-                    } catch (err) {
-                        errorCount++;
-                        console.error("Error al sincronizar firma pendiente:", err);
-                    }
-                }
-
-                sap.m.MessageToast.show(`Sincronización de firmas finalizada. ${successCount} exitosas, ${errorCount} con error.`);
-            });
-        },
-        */
-        syncPendingSignatures: async function () {
-            sap.ui.require(["com/xcaret/recepcionarticulosoff/model/indexedDBService"], async function (indexedDBService) {
-                let pendingOps = await indexedDBService.getPendingOps();
-                // Filtra solo operaciones de firmas
-                let signatureOps = pendingOps.filter(op => op.type === "Signature");
-                if (!signatureOps || signatureOps.length === 0) {
-                    sap.m.MessageToast.show("No hay firmas pendientes por sincronizar.");
-                    return;
-                }
-        
-                let successCount = 0, errorCount = 0;
-        
                 for (let op of signatureOps) {
                     try {
                         if (op.opType === "create") {
@@ -312,7 +315,7 @@ sap.ui.define([
                                 ia[i] = byteString.charCodeAt(i);
                             }
                             let blob = new Blob([ab], { type: sign.mimeType || "image/jpeg" });
-        
+
                             // 2. Arma FormData igual que uploadSignature
                             let formData = new FormData();
                             formData.append("image", blob, "signature.jpeg");
@@ -322,13 +325,13 @@ sap.ui.define([
                                 PROCESS: sign.PROCESS,
                                 SUBPROCESS: sign.SUBPROCESS
                             }]));
-        
+
                             // 3. Sube la firma al backend
                             let response = await fetch(host + "/ImageSignItem", {
                                 method: "POST",
                                 body: formData
                             });
-        
+
                             if (response.ok) {
                                 // Marca como sincronizada y elimina de pendientes
                                 await indexedDBService.markSignatureAsSynced(signatureId);
@@ -365,11 +368,11 @@ sap.ui.define([
                         console.error("Error al sincronizar firma pendiente:", err);
                     }
                 }
-        
+
                 sap.m.MessageToast.show(`Sincronización de firmas finalizada. ${successCount} exitosas, ${errorCount} con error.`);
             });
         },
-        
+
         onCalculateDatesBefore: function (days) {
             let vCurrentDate = currentDate.toISOString().split("T")[0];
             var oFinalDate = new Date(vCurrentDate);
@@ -1581,6 +1584,11 @@ sap.ui.define([
                 console.error("❌ Error limpiando sesiones del usuario:", e);
             });
         },
+
+        _onMainMatched: function (oEvent) {
+            this._cleanupUserSessions();
+        }
+
 
     });
 });

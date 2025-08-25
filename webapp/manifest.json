@@ -33,7 +33,7 @@
   "sap.ui": {
     "technology": "UI5",
     "icons": {
-      "icon": "",
+      "icon": "sap-icon://receipt",
       "favIcon": "",
       "phone": "",
       "phone@2": "",
