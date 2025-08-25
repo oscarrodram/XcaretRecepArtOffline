@@ -9,7 +9,7 @@ sap.ui.define([
     return {
         getHost: function() {
             // Verificar si estamos en modo offline
-            if (typeof indexedDBService !== 'undefined' && !indexedDBService.isOnline()) {
+            if (!window.navigator.onLine) {
                 return null; // Modo offline
             }
             
@@ -31,7 +31,7 @@ sap.ui.define([
         /// ---------- Sessions ---------- ///
         GetSession: async function(controller, sDocumentId){
             // Verificar si estamos en modo offline
-            if (typeof indexedDBService !== 'undefined' && !indexedDBService.isOnline()) {
+            if (!window.navigator.onLine) {
                 console.log("📱 Modo offline: No se puede verificar sesión");
                 return false;
             }
@@ -81,7 +81,7 @@ sap.ui.define([
 
         PostSession: async function (oController, oBody) {
             // Verificar si estamos en modo offline
-            if (typeof indexedDBService !== 'undefined' && !indexedDBService.isOnline()) {
+            if (!window.navigator.onLine) {
                 console.log("📱 Modo offline: No se puede crear sesión");
                 return null;
             }
@@ -109,7 +109,7 @@ sap.ui.define([
 
         UpdateSession: async function (oController, oBody) {
             // Verificar si estamos en modo offline
-            if (typeof indexedDBService !== 'undefined' && !indexedDBService.isOnline()) {
+            if (!window.navigator.onLine) {
                 console.log("📱 Modo offline: No se puede actualizar sesión");
                 return null;
             }
@@ -137,7 +137,7 @@ sap.ui.define([
 
         DeleteSession: async function (DocumentID) {
             // Verificar si estamos en modo offline
-            if (typeof indexedDBService !== 'undefined' && !indexedDBService.isOnline()) {
+            if (!window.navigator.onLine) {
                 console.log("📱 Modo offline: No se puede eliminar sesión");
                 return "Offline mode";
             }
@@ -175,9 +175,9 @@ sap.ui.define([
 
         DeleteUserSessions: async function () {
             // Verificar si estamos en modo offline
-            if (typeof indexedDBService !== 'undefined' && !indexedDBService.isOnline()) {
+            if (!window.navigator.onLine) {
                 console.log("📱 Modo offline: No se puede eliminar sesiones de usuario");
-                return "Offline mode";
+                return null;
             }
 
             let host = this.getHost();
@@ -212,7 +212,7 @@ sap.ui.define([
 
         DeleteAllSessions: async function () {
             // Verificar si estamos en modo offline
-            if (typeof indexedDBService !== 'undefined' && !indexedDBService.isOnline()) {
+            if (!window.navigator.onLine) {
                 console.log("📱 Modo offline: No se puede eliminar todas las sesiones");
                 return "Offline mode";
             }

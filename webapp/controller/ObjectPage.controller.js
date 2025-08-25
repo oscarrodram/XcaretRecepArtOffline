@@ -70,11 +70,10 @@ sap.ui.define([
     return Controller.extend("com.xcaret.recepcionarticulosoff.controller.ObjectPage", {
         // Constantes para gestión de sesiones
         SESSION_UPDATE_INTERVAL: 60000, // 60 segundos
-        SESSION_TIMEOUT_MESSAGE: "Sesión expiró. Por favor, inicie edición nuevamente.",
-        SESSION_ERROR_MESSAGE: "Error al crear sesión. Intente nuevamente.",
-        SESSION_BLOCKED_MESSAGE: "Advertencia: No se pudo verificar el estado de bloqueo del documento.",
 
         onInit: async function () {
+            // Variable para el intervalo de renovación de sesión
+            this._sessionInterval = null;
             oBuni18n = this.getOwnerComponent().getModel("i18n").getResourceBundle();
             sCurrentLanguage = oBuni18n.getText("idioma");
             var oGlobalModel = new JSONModel({
@@ -265,7 +264,7 @@ sap.ui.define([
             // --------- GESTIÓN DE SESIÓN: BLOQUEO (SOLO MODO ONLINE) ---------
             if (smodeId === "r" && sObjectId !== "New") {
                 // Solo verificar sesiones si está online
-                if (typeof indexedDBService !== 'undefined' && indexedDBService.isOnline()) {
+                if (window.navigator.onLine) {
                     try {
                         // 1. Consultar si el documento está bloqueado por otro usuario
                         const sessionBlocked = await Services.GetSession(this, sObjectId);
@@ -282,39 +281,42 @@ sap.ui.define([
                             console.log("🔍 Usuario de sesión:", sessionUser);
                             console.log("🔍 ¿Es el mismo usuario?", currentUser.sUserId === sessionUser);
 
-                            // Solo bloquear si es un usuario diferente
-                            if (currentUser.sUserId !== sessionUser) {
-                                // Documento bloqueado por otro usuario
-                                console.log("🔒 Documento bloqueado por otro usuario:", sObjectId);
-                                oGlobalModel.setProperty("/enabled", false);
-                                this.byId("idBtnEdit").setEnabled(false);
-                                this.byId("idBtnSave").setEnabled(false);
+                                                            // Solo bloquear si es un usuario diferente
+                                if (currentUser.sUserId !== sessionUser) {
+                                    // Documento bloqueado por otro usuario
+                                    console.log("🔒 Documento bloqueado por otro usuario:", sObjectId);
+                                    oGlobalModel.setProperty("/enabled", false);
+                                    oGlobalModel.setProperty("/messageStripText", ""); // Limpiar mensaje anterior
+                                    
+                                    // Extraer nombre del ERNAM híbrido para el modelo global
+                                    this._showBlockedMessageFromHybridERNAMGlobal(oSession.ERNAM);
+                                    
+                                    // Bloquear botones de edición (solo inhabilitar, no cambiar visibilidad)
+                                    this._setEditButtonState(false, "Documento bloqueado por otro usuario");
+                                    this.byId("idBtnSave").setEnabled(false);
 
-                                // Extraer nombre del ERNAM híbrido para el modelo global
-                                this._showBlockedMessageFromHybridERNAMGlobal(oSession.ERNAM);
-
-                            } else {
-                                // Es el mismo usuario, permitir edición
-                                console.log("✅ Documento bloqueado por usuario actual, permitiendo edición:", sObjectId);
-                                oGlobalModel.setProperty("/enabled", false); // solo lectura
-                                oGlobalModel.setProperty("/messageStripText", "");
-                                this.byId("idBtnEdit").setEnabled(true);
-                                this.byId("idBtnSave").setEnabled(true);
-                            }
+                                } else {
+                                    // Es el mismo usuario, permitir edición
+                                    console.log("✅ Documento bloqueado por usuario actual, permitiendo edición:", sObjectId);
+                                    oGlobalModel.setProperty("/enabled", false); // solo lectura
+                                    oGlobalModel.setProperty("/messageStripText", "");
+                                    this._setEditButtonState(true, "Usuario actual tiene bloqueo activo");
+                                    this.byId("idBtnSave").setEnabled(true);
+                                }
                         } else {
                             // Si NO está bloqueado, oculta mensaje y sigue flujo normal
                             console.log("✅ Documento disponible para edición:", sObjectId);
                             oGlobalModel.setProperty("/enabled", false); // solo lectura
                             oGlobalModel.setProperty("/messageStripText", "");
-                            this.byId("idBtnEdit").setEnabled(true);
+                            this._setEditButtonState(true, "Documento disponible para edición");
                             this.byId("idBtnSave").setEnabled(true);
                         }
                     } catch (e) {
                         console.error("❌ Error verificando sesión del documento:", e);
                         // En caso de error, permitir edición pero mostrar advertencia
-                        const oGlobalModel = this.getView().getModel("globalModel");
-                        oGlobalModel.setProperty("/messageStripText", this.SESSION_BLOCKED_MESSAGE);
-                        this.byId("idBtnEdit").setEnabled(true);
+                        oGlobalModel.setProperty("/messageStripText", oBuni18n.getText("SESSION_BLOCKED_MESSAGE"));
+                        // Solo habilitar/inhabilitar botones, no cambiar visibilidad
+                        this._setEditButtonState(true, "Error en verificación de sesión - permitiendo edición");
                         this.byId("idBtnSave").setEnabled(true);
                     }
                 } else {
@@ -322,13 +324,15 @@ sap.ui.define([
                     console.log("📱 Modo offline: No se verifica gestión de sesiones");
                     const oGlobalModel = this.getView().getModel("globalModel");
                     oGlobalModel.setProperty("/messageStripText", "");
-                    this.byId("idBtnEdit").setEnabled(true);
+                    // Solo habilitar/inhabilitar botones, no cambiar visibilidad
+                    this._setEditButtonState(true, "Modo offline - permitiendo edición");
                     this.byId("idBtnSave").setEnabled(true);
                 }
             } else {
                 // Si es modo creación/copia, flujo normal y oculta mensaje
                 const oGlobalModel = this.getView().getModel("globalModel");
                 oGlobalModel.setProperty("/messageStripText", "");
+                // En modo creación/copia, los botones se manejan por roles
             }
             
             console.log(smodeId)
@@ -2153,9 +2157,38 @@ sap.ui.define([
             oGlobalModel.refresh();
             oEditstatus = state;
 
+            // --- GESTIÓN DE BOTONES DE EDICIÓN (SOLO HABILITACIÓN) ---
+            // La visibilidad se maneja por roles, solo controlamos enabled/disabled
+            // NOTA: El botón "Editar" solo se inhabilita por conflictos de sesión, no por cambio de modo
+            if (state) {
+                // Habilitar edición: botones de guardar/cancelar habilitados
+                this.byId("idBtnSave").setEnabled(true);  // Guardar habilitado
+                this.byId("idBtnCancel").setEnabled(true); // Cancelar habilitado
+                // El botón "Editar" mantiene su estado actual (no se modifica aquí)
+            } else {
+                // Deshabilitar edición: botones de guardar/cancelar deshabilitados
+                this.byId("idBtnSave").setEnabled(false); // Guardar deshabilitado
+                this.byId("idBtnCancel").setEnabled(false); // Cancelar deshabilitado
+                // El botón "Editar" mantiene su estado actual (no se modifica aquí)
+            }
+
             if (sMode === "a") {
                 var oGlobalModel = this.getView().getModel("globalModel");
                 oGlobalModel.setProperty("/xdifica", false);
+            }
+        },
+
+        // --- GESTIÓN ESPECÍFICA DEL BOTÓN EDITAR ---
+        // Esta función solo se llama cuando hay conflictos de sesión
+        _setEditButtonState: function(enabled, reason) {
+            const oBtnEdit = this.byId("idBtnEdit");
+            if (oBtnEdit) {
+                oBtnEdit.setEnabled(enabled);
+                if (!enabled) {
+                    console.log(`🔒 Botón Editar inhabilitado: ${reason}`);
+                } else {
+                    console.log(`✅ Botón Editar habilitado: ${reason}`);
+                }
             }
         },
 
@@ -2163,7 +2196,7 @@ sap.ui.define([
 
         onEditFieldsBtn: async function (oEvent) {
             // Verificar si estamos en modo offline
-            if (typeof indexedDBService !== 'undefined' && !indexedDBService.isOnline()) {
+            if (!window.navigator.onLine) {
                 // Modo offline: funcionalidad existente sin gestión de sesiones
                 console.log("📱 Modo offline: Funcionalidad de edición sin gestión de sesiones");
                 var bXdifica = this._getXdificaIndicator();
@@ -2215,6 +2248,7 @@ sap.ui.define([
                         // Documento bloqueado por otro usuario
                         // Extraer nombre del ERNAM híbrido para el modelo global
                         this._showBlockedMessageFromHybridERNAMGlobal(oSession.ERNAM);
+                        this._setEditButtonState(false, "Documento bloqueado por otro usuario al intentar editar");
                         this.onEditFields(false, smodeId);
                         return; // Prevenir edición
                     } else {
@@ -2245,10 +2279,7 @@ sap.ui.define([
                     const sessionData = Json.CreateSession(this, sObjectId);
                     if (!sessionData) {
                         console.error("❌ No se pudo crear datos de sesión");
-                        const oGlobalModel = this.getView().getModel("globalModel");
-                        if (oGlobalModel) {
-                            oGlobalModel.setProperty("/messageStripText", "Error: No se pudo crear la sesión. Verifique los datos del documento.");
-                        }
+                        oGlobalModel.setProperty("/messageStripText", "Error: No se pudo crear la sesión. Verifique los datos del documento.");
                         this.onEditFields(false, smodeId);
                         return;
                     }
@@ -2297,10 +2328,7 @@ sap.ui.define([
                                     this.onEditFields(false, smodeId);
                                     
                                     // Mostrar mensaje al usuario
-                                    const oGlobalModel = this.getView().getModel("globalModel");
-                                    if (oGlobalModel) {
-                                        oGlobalModel.setProperty("/messageStripText", this.SESSION_TIMEOUT_MESSAGE);
-                                    }
+                                    oGlobalModel.setProperty("/messageStripText", oBuni18n.getText("SESSION_TIMEOUT_MESSAGE"));
                                 } else {
                                     console.log("🔄 Sesión renovada exitosamente");
                                 }
@@ -2317,36 +2345,89 @@ sap.ui.define([
                         var bXdifica = this._getXdificaIndicator();
                         this.onEditFields(true);
                         this.byId("idBttonReference").setEnabled(true);
-                        var oGlobalModel = this.getView().getModel("globalModel");
                         oGlobalModel.setProperty("/xdifica", bXdifica);
+                        oGlobalModel.setProperty("/messageStripText", ""); // Limpia mensaje de bloqueo
+                        // El botón Editar se mantiene habilitado (no se modifica aquí)
+                        
+                        // --- INICIAR RENOVACIÓN PERIÓDICA DE SESIÓN ---
+                        if (this._sessionInterval) {
+                            clearInterval(this._sessionInterval);
+                            this._sessionInterval = null;
+                        }
+
+                        this._sessionInterval = setInterval(async () => {
+                            try {
+                                console.log("🔄 Renovando sesión periódicamente...");
+                                
+                                // 1. Verificar primero si la sesión aún existe en la base de datos
+                                const sessionExists = await Services.GetSession(this, sObjectId);
+                                if (!sessionExists) {
+                                    console.log("🔄 Sesión ya no existe en la base de datos, deteniendo intervalo");
+                                    clearInterval(this._sessionInterval);
+                                    this._sessionInterval = null;
+                                    this.onEditFields(false, smodeId);
+                                    return;
+                                }
+
+                                // 2. Validar que UpdateSession retorne datos válidos
+                                const updateData = Json.UpdateSession(this, sObjectId);
+                                if (!updateData) {
+                                    console.error("❌ No se pudo crear datos de actualización de sesión");
+                                    clearInterval(this._sessionInterval);
+                                    this._sessionInterval = null;
+                                    this.onEditFields(false, smodeId);
+                                    return;
+                                }
+
+                                // 3. Actualizar la sesión
+                                const result = await Services.UpdateSession(this, updateData);
+                                if (!result || result.error) {
+                                    // Sesión expiró o hay error, limpiar y deshabilitar edición
+                                    console.warn("⚠️ Sesión expiró o error en actualización:", result);
+                                    clearInterval(this._sessionInterval);
+                                    this._sessionInterval = null;
+                                    this.onEditFields(false, smodeId);
+
+                                    // Mostrar mensaje al usuario
+                                    oGlobalModel.setProperty("/messageStripText", oBuni18n.getText("SESSION_EXPIRED"));
+                                } else {
+                                    console.log("🔄 Sesión renovada exitosamente");
+                                    // Opcional: mostrar mensaje de éxito
+                                    // oGlobalModel.setProperty("/messageStripText", oBuni18n.getText("SESSION_RENEWED"));
+                                }
+                            } catch (e) {
+                                console.error("❌ Error actualizando sesión:", e);
+                                // En caso de error, limpiar intervalo y deshabilitar edición
+                                clearInterval(this._sessionInterval);
+                                this._sessionInterval = null;
+                                this.onEditFields(false, smodeId);
+                                
+                                // Mostrar mensaje de error
+                                oGlobalModel.setProperty("/messageStripText", oBuni18n.getText("SESSION_UPDATE_ERROR"));
+                            }
+                        }, this.SESSION_UPDATE_INTERVAL);
+                        
                         var smg1 = oBuni18n.getText("EDIT_MSG");
                         sap.m.MessageToast.show(smg1);
                         
                     } else {
-                        // Lock fallido: no permite edición
-                        console.error("❌ No se pudo crear sesión:", sessionCreated);
-                        const oGlobalModel = this.getView().getModel("globalModel");
-                        if (oGlobalModel) {
-                            oGlobalModel.setProperty("/messageStripText", "Error: No se pudo crear la sesión. Intente nuevamente.");
-                        }
+                        // Lock fallido: muestra mensaje y NO habilita edición
+                        console.warn("⚠️ No se pudo crear sesión:", sessionCreated);
+                        const oSession = oServiceModel.getProperty("/Session") || {};
+                        // Extraer nombre del ERNAM híbrido para el modelo global
+                        this._showBlockedMessageFromHybridERNAMGlobal(oSession.ERNAM);
                         this.onEditFields(false, smodeId);
                     }
                     
                 } catch (e) {
                     console.error("❌ Error en la gestión de sesiones:", e);
-                    const oGlobalModel = this.getView().getModel("globalModel");
-                    if (oGlobalModel) {
-                        oGlobalModel.setProperty("/messageStripText", "Error: No se pudo procesar la solicitud de edición. Intente nuevamente.");
-                    }
+                    oGlobalModel.setProperty("/messageStripText", "Error: No se pudo procesar la solicitud de edición. Intente nuevamente.");
                     this.onEditFields(false, smodeId);
                 }
                 
             } catch (e) {
                 console.error("❌ Error en la gestión de sesiones:", e);
-                const oGlobalModel = this.getView().getModel("globalModel");
-                if (oGlobalModel) {
-                    oGlobalModel.setProperty("/messageStripText", "Error: No se pudo procesar la solicitud de edición. Intente nuevamente.");
-                }
+                oGlobalModel.setProperty("/messageStripText", "Error: No se pudo procesar la solicitud de edición. Intente nuevamente.");
                 this.onEditFields(false, smodeId);
             }
         },
@@ -2843,6 +2924,44 @@ sap.ui.define([
                 return responseData;
             }
             if (response.status === 200) {
+                // --- LIBERACIÓN DE SESIÓN DESPUÉS DE GUARDAR ---
+                try {
+                    // 1. Limpiar el intervalo ANTES de liberar la sesión
+                    if (this._sessionInterval) {
+                        console.log("🧹 Limpiando intervalo de sesión antes de liberar");
+                        clearInterval(this._sessionInterval);
+                        this._sessionInterval = null;
+                    }
+
+                    // 2. Liberar la sesión con el ID original (no el nuevo generado)
+                    console.log("🔍 Liberando sesión con ID original:", sObjectId);
+                    const deleteResult = await Services.DeleteUserSessions();
+                    if (deleteResult && deleteResult !== "Error") {
+                        console.log("✅ Sesión liberada exitosamente:", sObjectId);
+                    } else {
+                        console.warn("⚠️ Advertencia al liberar sesión:", deleteResult);
+                    }
+
+                    // 3. Verificar que la sesión se haya liberado
+                    setTimeout(async () => {
+                        try {
+                            const sessionCheck = await Services.GetSession(this, sObjectId);
+                            if (!sessionCheck) {
+                                console.log("✅ Verificación: Sesión eliminada correctamente de la base de datos");
+                            } else {
+                                console.warn("⚠️ Verificación: Sesión aún existe en la base de datos");
+                            }
+                        } catch (e) {
+                            console.error("❌ Error verificando liberación de sesión:", e);
+                        }
+                    }, 1000); // Verificar después de 1 segundo
+
+                } catch (e) {
+                    console.error("❌ Error liberando sesión:", e);
+                    // Opcional: mostrar mensaje al usuario sobre el error
+                }
+                // ----------- Fin limpieza sesión -----------
+
                 //upload images
                 this.updateScheduleLineQuantity();
                 this.onUploadPhotos(oViewObj.MBLRN);
@@ -3666,7 +3785,47 @@ sap.ui.define([
             }
         },
 
-        onCancelEdit: function (oEvent) {
+        onCancelEdit: async function (oEvent) {
+            // --- LIBERACIÓN DE SESIÓN AL CANCELAR ---
+            if (window.navigator.onLine && sObjectId && sObjectId !== "New") {
+                try {
+                    // 1. Limpiar el intervalo ANTES de liberar la sesión
+                    if (this._sessionInterval) {
+                        console.log("🧹 Limpiando intervalo de sesión antes de liberar");
+                        clearInterval(this._sessionInterval);
+                        this._sessionInterval = null;
+                    }
+
+                    // 2. Liberar la sesión con el ID original de la sesión
+                    console.log("🔍 Liberando sesión con ID original:", sObjectId);
+                    const deleteResult = await Services.DeleteUserSessions();
+                    if (deleteResult && deleteResult !== "Error") {
+                        console.log("✅ Sesión liberada exitosamente:", sObjectId);
+                    } else {
+                        console.warn("⚠️ Advertencia al liberar sesión:", deleteResult);
+                    }
+
+                    // 3. Verificar que la sesión se haya liberado
+                    setTimeout(async () => {
+                        try {
+                            const sessionCheck = await Services.GetSession(this, sObjectId);
+                            if (!sessionCheck) {
+                                console.log("✅ Verificación: Sesión eliminada correctamente de la base de datos");
+                            } else {
+                                console.warn("⚠️ Verificación: Sesión aún existe en la base de datos");
+                            }
+                        } catch (e) {
+                            console.error("❌ Error verificando liberación de sesión:", e);
+                        }
+                    }, 1000); // Verificar después de 1 segundo
+
+                } catch (e) {
+                    console.error("❌ Error liberando sesión:", e);
+                    // Opcional: mostrar mensaje al usuario sobre el error
+                }
+                // --- Fin liberación sesión ---
+            }
+
             // Limpiar campos de AddToTable.fragment.xml usando el ID correcto ('myDialog')
             try {
                 var sFragmentId = this.createId("myDialog");
@@ -3721,7 +3880,46 @@ sap.ui.define([
             }
         },
 
-        onNavBack: function () {
+        onNavBack: async function () {
+            console.log("Se ejecuta onnavback")
+            // --- LIBERACIÓN DE SESIÓN AL NAVEGAR ---
+            if (window.navigator.onLine && sObjectId && sObjectId !== "New") {
+                try {
+                    // Limpia el intervalo de sesión si existe
+                    if (this._sessionInterval) {
+                        console.log("🧹 Limpiando intervalo de sesión antes de liberar");
+                        clearInterval(this._sessionInterval);
+                        this._sessionInterval = null;
+                    }
+
+                    // Libera el lock de sesión utilizando el ID original de la sesión
+                    console.log("🔍 Liberando sesión con ID original:", sObjectId);
+                    const deleteResult = await Services.DeleteUserSessions();
+                    if (deleteResult && deleteResult !== "Error") {
+                        console.log("✅ Sesión liberada exitosamente:", sObjectId);
+                    } else {
+                        console.warn("⚠️ Advertencia al liberar sesión:", deleteResult);
+                    }
+
+                    // Verificar que la sesión se haya liberado
+                    setTimeout(async () => {
+                        try {
+                            const sessionCheck = await Services.GetSession(this, sObjectId);
+                            if (!sessionCheck) {
+                                console.log("✅ Verificación: Sesión eliminada correctamente de la base de datos");
+                            } else {
+                                console.warn("⚠️ Verificación: Sesión aún existe en la base de datos");
+                            }
+                        } catch (e) {
+                            console.error("❌ Error verificando liberación de sesión:", e);
+                        }
+                    }, 1000); // Verificar después de 1 segundo
+                } catch (e) {
+                    console.error("❌ Error liberando sesión:", e);
+                    // Opcional: mostrar mensaje al usuario sobre el error
+                }
+            }
+
             BusyIndicator.show(0);
             var oEventBus = sap.ui.getCore().getEventBus();
             oEventBus.publish("MainChannel", "onInitialMainPage");
@@ -6024,7 +6222,7 @@ sap.ui.define([
         },
 
         checkSignAuth: function () {
-            sEmail = "david.venegas@celeritech.biz"
+            //sEmail = "david.venegas@celeritech.biz"
             //sEmail = "ariel.piedra@celeritech.biz"
             var sUrl = `${host}/Rol?$filter=ID EQ ${sAppID} AND TYPE EQ 2 AND EMAIL EQ '${sEmail}'`;
             var aResponse = this.getDataRangesSynchronously(sUrl);
@@ -6521,10 +6719,10 @@ sap.ui.define([
             }
 
             // Liberar sesión activa si existe (solo en modo online)
-            if (typeof indexedDBService !== 'undefined' && indexedDBService.isOnline() && sObjectId && sObjectId !== "New") {
+            if (window.navigator.onLine && sObjectId && sObjectId !== "New") {
                 try {
                     console.log("🧹 Limpiando sesión al salir del controlador:", sObjectId);
-                    const deleteResult = await Services.DeleteSession(sObjectId);
+                    const deleteResult = await Services.DeleteUserSessions();
                     if (deleteResult && deleteResult !== "Error") {
                         console.log("✅ Sesión liberada exitosamente al salir");
                     } else {
